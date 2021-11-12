@@ -1,0 +1,3 @@
+*.net
+/cache
+/__pycache__
