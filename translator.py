@@ -5,10 +5,12 @@ import matplotlib.pyplot as plt
 import utm
 
 from math import radians, cos, sin, asin, sqrt
+
+
 def haversine(lon1, lat1, lon2, lat2):
     """
     Calculate the great circle distance between two points 
-    on the earth (specified in decimal degrees)
+    on the spherical surface of Earth (specified in decimal degrees)
     """
     # convert decimal degrees to radians 
     lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
@@ -21,11 +23,8 @@ def haversine(lon1, lat1, lon2, lat2):
     km = 6371* c
     return km * 1000.0
 
-
-
-locationName = 'Florianopolis, Brazil'
-
-inputFile = locationName+'.net'
+place_name =  "Forquilhinha, Brazil"
+inputFile = place_name+'.net'
 
 nodes = {}
 roads = []
@@ -95,9 +94,9 @@ for line in lines:
                 i+= c -1 
                 continue
         if "oneway" not in arc:
-           arc["oneway"] = "yes"
+            arc["oneway"] = "yes"
         if "lanes" not in arc:
-           arc["lanes"] = 1
+            arc["lanes"] = 1
         
         
         if arc["lanes"] > 1 and arc["oneway"] == "no":
@@ -203,7 +202,7 @@ for road in roads:
                 speed = road2["maxspeed"]
             pMatrix[rid][rid2] += (1.0-pMatrix[rid][rid])*((road2["lanes"] * (1/speed))/ (lanes) )
             
-       
+    
 
     
 
@@ -287,9 +286,9 @@ for (node, data) in graph.nodes(data=True):
 
 
 nx.draw_networkx(graph, pos=nodePos,  with_labels=False, node_size=0, edge_color=edgeColors)
-plt.savefig(locationName+".png", format="PNG")
-plt.savefig(locationName+".pdf", format="PDF")
-plt.show()
+plt.savefig(place_name+".png", format="PNG")
+plt.savefig(place_name+".pdf", format="PDF")
+#plt.show()
 
 
 #nx.draw_networkx(graph, pos=nodePos, with_labels=True, edge_color=edgeColors)

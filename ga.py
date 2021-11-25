@@ -1,7 +1,7 @@
 import osmnx as ox
 import networkx as nx
 import copy
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as pyplot
 import utm
 import random
 
@@ -346,10 +346,10 @@ class Individual:
                 edge_color=edgeColors)
         nx.draw_networkx_edge_labels(graph, pos=nodePos, edge_labels=edgeLabels, font_color='black')
         if outputFormat != None:
-            plt.savefig(outputFilename + "." + str(outputFormat), format=outputFormat)
-        # plt.savefig(outputFilename+".png", format="PNG")
-        # plt.savefig(outputFilename+".pdf", format="PDF")
-        plt.show()
+            pyplot.savefig(outputFilename + "." + str(outputFormat), format=outputFormat)
+        # pyplot.savefig(outputFilename+".png", format="PNG")
+        # pyplot.savefig(outputFilename+".pdf", format="PDF")
+        pyplot.show()
 
 
 class UserModel:
@@ -728,48 +728,170 @@ class GeneticAlgorithm:
         return None
 
 
-problem = ProblemDefinition("Florianopolis, Brazil.net")
-x = Individual(problem)
-userModel = UMSalmanAlaswad_I()
-
-# adaptation of a single individual
-# maior = 0
-# maiorId = None
-# maiorT = None
-# for i in range(len(problem.tracks)):
-#    track = problem.tracks[i]
-#    maiorId
-#    if track["distance"] > maior:
-#     maior = track["distance"]
-#     maiorT = track
-#     maiorId = i
-# print(maiorT)
-# print(maiorId)
-# exit(0)
-# {'s': '2918', 't': '2919', 'distance': 1006.5518963592865, 'oneway': 'yes', 'lanes': 1, 'id': '3188', 'tt': 26.852742937962635}
-# x.setLaneValue(problem, '3188',10)
-# x.insertAdditionalTrack(problem, '2918', '5133', 5000, 2, 50)
-# x.insertAdditionalTrack(problem, '5133', '2918', 5000, 2, 50)
 
 
-# print(x.vehiclesByRoad)
-print(x.fitness)
+def createInitialPopulation(self, size, initialProblem):
+    initialPopulation = list()
+    count = 0
+    while count < size:
+        initialPopulation.append(self.createNewRadomIndividual(initialProblem))
+        count += 1
+    return initialPopulation
 
-# y = Individual(problem)
-# userModel.fitness(problem, y)
+def createNewRadomIndividual(self, initialProblem):
+    # create the individual
+    individual = Individual(initialProblem)
 
-print(x.regularInsertedKMeters)
-print(x.newInsertedKMeters)
-print(x.fitness)
+    # number of the iterations
+    count = random.randint(1, 100)
 
-# print(y.regularInsertedKMeters)
-# print(y.newInsertedKMeters)
-# print(y.fitness)
+    while count > 0:
+        # random selection of a track source
+        aleatoryTrackSource = individual.tracks[str(random.randint(1, len(individual.tracks)))]
+
+        # random selection of a track target
+        aleatoryTrackTarget = individual.tracks[str(aleatoryTrackSource)]
+
+        # random selection of a track id
+        aleatoryTrackId = str(random.randint(1, 1000))
+
+        # random number for the option
+        randomNumber = random.randint(1, 3)
+        if randomNumber == 1:
+            individual.insertAdditionalTrack(problem, aleatoryTrackSource, aleatoryTrackTarget, 10, 1, problem.maxSpeed)
+        elif randomNumber == 2:
+            individual.setLaneValue(initialProblem, aleatoryTrackId, random.randint(1, 5))
+        else:
+            individual.removeAdditionalTrack(aleatoryTrackSource, aleatoryTrackTarget, aleatoryTrackId)
+        count -= 1
+
+    return individual
 
 
-ga = GeneticAlgorithm(problem)
-# ga.mutationAddLane(x)
-ga.mutationAddLaneOnRoad(x)
-userModel.fitness(problem, x)
 
-x.printDesign(problem)
+
+def run_genetic_algorithm(place_name):
+
+    global problem
+
+    TOTAL_NUMBER_OF_INDIVIDUALS = 20
+    TOTAL_NUMBER_OF_GENERATIONS = 100
+    problem = ProblemDefinition(place_name+".net")
+    userModel = UMSalmanAlaswad_I()
+    fitness_list = []
+    selected_parents = []
+    total_fitness_sum = 0
+    best_individual = {
+        "fitness": 0,
+        "solution": None
+    }
+
+    # def create_first_population(problem, individuals):
+    #     population = []
+
+    #     for i in range(individuals):
+    #         population.append(Individual(problem))
+
+    #     return population
+
+    generation_individuals = createInitialPopulation(TOTAL_NUMBER_OF_INDIVIDUALS, problem)
+
+    def mate(father, mother):
+        #do crossover
+        #do mutation
+        #return new individual ↓
+        return Individual(problem)
+
+    def draw_individual():
+        random_number = random.randint(0, total_fitness_sum)
+
+        previous_fitness_sum = 0
+
+        #find winner individual
+        for i in range(TOTAL_NUMBER_OF_INDIVIDUALS):
+
+            individual_fitness = fitness_list[i]
+            previous_fitness_sum += individual_fitness
+            if previous_fitness_sum > random_number:
+                return generation_individuals[i]
+        pass
+
+
+    #runs the genetic algorithm on the number of generations specified
+    for gen in range(TOTAL_NUMBER_OF_GENERATIONS):
+
+        #fills the fitness_list and calculates total_fitness_sum
+        for i in range(TOTAL_NUMBER_OF_INDIVIDUALS):
+
+            individual = generation_individuals[i]
+            #individual_fitness = userModel.fitness(individual)
+            individual_fitness = random.randint(0, 100)
+            fitness_list.append(individual_fitness)
+            total_fitness_sum += fitness_list[i]
+
+            #updates the best fitness found
+            if individual_fitness > best_individual["fitness"]:
+                best_individual["fitness"] = individual_fitness
+                best_individual["solution"] = individual
+
+
+        #selection / create selected_parents list
+        for i in range(TOTAL_NUMBER_OF_INDIVIDUALS):
+
+            father = draw_individual()
+            mother = draw_individual()
+
+            while mother == father:
+                mother = draw_individual()
+
+            selected_parents.append({
+                "father": father,
+                "mother": mother
+            })
+
+        #mate parents to create new generation
+        for i in range(TOTAL_NUMBER_OF_INDIVIDUALS):
+            generation_individuals[i] = mate(**selected_parents[i])
+
+
+    # adaptation of a single individual
+    # maior = 0
+    # maiorId = None
+    # maiorT = None
+    # for i in range(len(problem.tracks)):
+    #    track = problem.tracks[i]
+    #    maiorId
+    #    if track["distance"] > maior:
+    #     maior = track["distance"]
+    #     maiorT = track
+    #     maiorId = i
+    # print(maiorT)
+    # print(maiorId)
+    # exit(0)
+    # {'s': '2918', 't': '2919', 'distance': 1006.5518963592865, 'oneway': 'yes', 'lanes': 1, 'id': '3188', 'tt': 26.852742937962635}
+    # x.setLaneValue(problem, '3188',10)
+    # x.insertAdditionalTrack(problem, '2918', '5133', 5000, 2, 50)
+    # x.insertAdditionalTrack(problem, '5133', '2918', 5000, 2, 50)
+
+
+    # print(x.vehiclesByRoad)
+    print("fitness: ", best_individual["fitness"])
+
+    # y = Individual(problem)
+    # userModel.fitness(problem, y)
+
+    print(best_individual["solution"].regularInsertedKMeters)
+    print("newInsertedKMeters: ", best_individual["solution"].newInsertedKMeters)
+    print("fitness: ", best_individual["solution"].fitness)
+
+    # print(y.regularInsertedKMeters)
+    # print(y.newInsertedKMeters)
+    # print(y.fitness)
+
+
+    ga = GeneticAlgorithm(problem)
+    # ga.mutationAddLane(best_individual)
+    ga.mutationAddLaneOnRoad(best_individual["solution"])
+    userModel.fitness(problem, best_individual["solution"])
+
+    best_individual["solution"].printDesign(problem)
