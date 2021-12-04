@@ -19,6 +19,7 @@ class Utils:
             return 0
 
 
+# reads the .net file from load_place.py and turns it into a graph
 class ProblemDefinition:
 
     def __init__(self, inputFile):
@@ -173,6 +174,7 @@ class ProblemDefinition:
         return km * 1000.0  # in meters
 
 
+#reads the problem (a city graph) and creates new attributes/functions useful for a genetic algorithm
 class Individual:
 
     def __init__(self, problem):
@@ -194,7 +196,7 @@ class Individual:
 
     #Funções gets faltantes
     #return the fitness metric
-    def getFitness(self):
+    def getFitnestracks(self):
         return self.fitness
 
     #return the vehicles by roads
