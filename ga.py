@@ -8,13 +8,15 @@ from problem_definition import ProblemDefinition
 from user_model import UMSalmanAlaswad_I
 
 
-#reads the problem (a city graph) and creates new attributes/functions useful for a genetic algorithm
+#reads the problem (a city graph) and creates new useful attributes/functions for a genetic algorithm
 class Individual:
 
     def __init__(self, problem):
         self.fitness = None
         self.vehiclesByRoad = None
         self.tracks = {}  # positive or negative number of adapted lanes
+        # for the tracks with new number of lanes
+        self.newLanes = {}
         self.newTracks = {}
         # for preexisting tracks
         self.regularInsertedKMeters = 0
@@ -46,7 +48,7 @@ class Individual:
         return len(self.newTracks)
 
     #return the number of adapted tracks
-    def getTracksSize(self):
+    def getTracksSize(self): #returns total number of tracks
         return len(self.tracks)
 
     #return the next track id
@@ -57,6 +59,36 @@ class Individual:
     def getLaneValue(self, tid):
         return self.tracks[tid]
 
+    def getModifications(self):
+        return {
+            "newTracks": self.newTracks,
+            "newLanes": self.newLanes
+        }
+
+    # each modification has a 50% of being returned
+    def getRandomModifications(self):
+        modifications = self.getModifications()
+
+        randomNewTracks = dict(filter(lambda _: random.random() > 0.5, modifications["newTracks"]))
+        randomNewLanes = dict(filter(lambda _: random.random() > 0.5, modifications["newLanes"]))
+        
+        return {
+            "newTracks": randomNewTracks,
+            "newLanes": randomNewLanes
+        }
+
+    def setModifications(self, problem, fatherModifications, motherModifications):
+        newTracks = fatherModifications["newTracks"] + motherModifications["newTracks"]
+        newLanes = fatherModifications["newLanes"] + motherModifications["newLanes"]
+        
+        for source in newTracks.keys():
+            for target in newTracks[source].keys():
+                for track in newTracks[source][target]:
+                    self.insertAdditionalTrack(problem, track["s"], track["t"], track["distance"], track["lanes"], track["maxspeed"])
+
+        for tid, newNoLanes in newLanes.items():
+            self.setLaneValue(problem, tid, newNoLanes)
+
     # set the number of lanes adapted in a track
     def setLaneValue(self, problem, tid, newNoLanes):
         i = int(tid)
@@ -65,6 +97,7 @@ class Individual:
         if self.tracks[tid] < 0:
             self.regularRemovedKMeters -= self.tracks[tid] * problem.tracks[i]["distance"] / 1000.0
         self.tracks[tid] = newNoLanes
+        self.newLanes[tid] = newNoLanes
         if newNoLanes > 0:
             self.regularInsertedKMeters += newNoLanes * problem.tracks[i]["distance"] / 1000.0
         if newNoLanes < 0:
@@ -215,7 +248,7 @@ class GeneticAlgorithm:
         metersReached = 0  # meters chaged
 
         # select a random node
-        trackId = random.randint(0, len(self.problem.tracks))
+        trackId = random.randint(0, len(self.problem.tracks) - 1)
         track = self.problem.tracks[trackId]
         trackList = []
         metersReached += track["distance"]
@@ -225,15 +258,16 @@ class GeneticAlgorithm:
             if random.random() < chanceToStop:
                 break
             # select a new destination
-            res = random.choice(list(self.problem.adjLst[node].items()))
-            if res == None: break
-            t = res[0]
-            if t not in self.problem.adjLst[node]: break
-            track = random.choice(self.problem.adjLst[node][t])
-            if track == None: break
-            trackId = track["id"]
-            metersReached += track["distance"]
-            node = track["t"]
+            if node in self.problem.adjLst:
+                res = random.choice(list(self.problem.adjLst[node].items()))
+                if res == None: break
+                t = res[0]
+                if t not in self.problem.adjLst[node]: break
+                track = random.choice(self.problem.adjLst[node][t])
+                if track == None: break
+                trackId = track["id"]
+                metersReached += track["distance"]
+                node = track["t"]
         # updating new lanes
         for trackId in trackList:
             ind.setLaneValue(self.problem, str(trackId), +1)
@@ -250,7 +284,7 @@ class GeneticAlgorithm:
             trackList = []
 
             # select a random node
-            trackId = random.randint(0, len(self.problem.tracks))
+            trackId = random.randint(0, len(self.problem.tracks) - 1)
             track = self.problem.tracks[trackId]
             metersReached = 0
 
@@ -264,7 +298,8 @@ class GeneticAlgorithm:
                 trackId = int(track["id"])
                 trackList.append(trackId)
                 lastNode = nodeStart
-                nodeStart = next(iter(problem.adjLstInv[nodeStart]))
+                if nodeStart in problem.adjLstInv:
+                    nodeStart = next(iter(problem.adjLstInv[nodeStart]))
 
             # finding the road last node
 
@@ -305,7 +340,7 @@ class GeneticAlgorithm:
 
         while count > 0:
             # random selection of a track source
-            aleatoryTrackSource = individual.tracks[str(random.randint(1, len(individual.tracks)))]
+            aleatoryTrackSource = individual.tracks[str(random.randint(1, len(individual.tracks) - 1))]
 
             # random selection of a track target
             aleatoryTrackTarget = individual.tracks[str(aleatoryTrackSource)]
@@ -323,7 +358,6 @@ class GeneticAlgorithm:
             else:
                 individual.removeAdditionalTrack(aleatoryTrackSource, aleatoryTrackTarget, aleatoryTrackId)
             count -= 1
-
         return individual
 
 def run_genetic_algorithm(place_name):
@@ -331,7 +365,10 @@ def run_genetic_algorithm(place_name):
     global problem
 
     TOTAL_NUMBER_OF_INDIVIDUALS = 20
-    TOTAL_NUMBER_OF_GENERATIONS = 100
+    TOTAL_NUMBER_OF_ELITE_INDIVIDUALS = 2
+    TOTAL_NUMBER_OF_RANDOM_INDIVIDUALS = int(TOTAL_NUMBER_OF_INDIVIDUALS / 2)
+    TOTAL_NUMBER_OF_MATED_INDIVIDUALS = TOTAL_NUMBER_OF_INDIVIDUALS - TOTAL_NUMBER_OF_ELITE_INDIVIDUALS - TOTAL_NUMBER_OF_RANDOM_INDIVIDUALS
+    TOTAL_NUMBER_OF_GENERATIONS = 2
     problem = ProblemDefinition(place_name + ".net")
     ga = GeneticAlgorithm(problem)
     userModel = UMSalmanAlaswad_I()
@@ -342,35 +379,50 @@ def run_genetic_algorithm(place_name):
         "fitness": 0,
         "solution": None
     }
+    current_generation_individuals = ga.createInitialPopulation(TOTAL_NUMBER_OF_INDIVIDUALS, problem)
+    new_generation_individuals = []
 
-    # def create_first_population(problem, individuals):
-    #     population = []
-
-    #     for i in range(individuals):
-    #         population.append(Individual(problem))
-
-    #     return population
-
-    generation_individuals = ga.createInitialPopulation(TOTAL_NUMBER_OF_INDIVIDUALS, problem)
-
+    #receives two Individuals, does crossover, mutation, and returns a new Individual
     def mate(father, mother):
         # do crossover
-        # do mutation
+
+        fatherModifications = father.getRandomModifications()
+        motherModifications = mother.getRandomModifications()
+
+        child = Individual(problem)
+
+        child.setModifications(problem, fatherModifications, motherModifications)
+
+        mutation(child)
+
         # return new individual ↓
-        return Individual(problem)
+        return child
+
+    def mutation(individual):
+        aleatoryIndividualsMutationIndex = random.sample(range(TOTAL_NUMBER_OF_INDIVIDUALS), int(len(individual.newTracks)*ga.mutationRate))
+        for i in range(len(individual.newTracks)):
+            if i in aleatoryIndividualsMutationIndex:
+                randomNumber = random.randint(1, 2)
+                if randomNumber == 1:
+                    ga.mutationAddLane(individual.newTracks[i])
+                elif randomNumber == 2:
+                    ga.mutationAddLaneOnRoad(individual.newTracks[i])
+
+        return individual
 
     def draw_individual():
         random_number = random.randint(0, total_fitness_sum)
 
+        #stores the sum of the population fitness until the current individual
         previous_fitness_sum = 0
 
         # find winner individual
         for i in range(TOTAL_NUMBER_OF_INDIVIDUALS):
 
-            individual_fitness = fitness_list[i]
+            individual_fitness = fitness_list[i]["fitness"]
             previous_fitness_sum += individual_fitness
             if previous_fitness_sum > random_number:
-                return generation_individuals[i]
+                return current_generation_individuals[i]
         pass
 
     # runs the genetic algorithm on the number of generations specified
@@ -379,19 +431,22 @@ def run_genetic_algorithm(place_name):
         # fills the fitness_list and calculates total_fitness_sum
         for i in range(TOTAL_NUMBER_OF_INDIVIDUALS):
 
-            individual = generation_individuals[i]
+            individual = current_generation_individuals[i]
             # individual_fitness = userModel.fitness(individual)
-            individual_fitness = random.randint(0, 100)
-            fitness_list.append(individual_fitness)
-            total_fitness_sum += fitness_list[i]
+            individual_fitness = random.randint(0, 100) #gambiarra
+            fitness_list.append({
+                "solution": individual,
+                "fitness": individual_fitness
+            })
+            total_fitness_sum += fitness_list[i]["fitness"]
 
-            # updates the best fitness found
-            if individual_fitness > best_individual["fitness"]:
-                best_individual["fitness"] = individual_fitness
-                best_individual["solution"] = individual
+        # we need to sort the fitness_list by their fitness in order to easily find the best individuals
+        sorted_fitness_list = sorted(fitness_list, key=lambda d: d["fitness"], reverse=True)
+        best_individual = sorted_fitness_list[0]
+
 
         # selection / create selected_parents list
-        for i in range(TOTAL_NUMBER_OF_INDIVIDUALS):
+        for i in range(TOTAL_NUMBER_OF_MATED_INDIVIDUALS):
 
             father = draw_individual()
             mother = draw_individual()
@@ -404,15 +459,31 @@ def run_genetic_algorithm(place_name):
                 "mother": mother
             })
 
-        # mate parents to create new generation
-        for i in range(TOTAL_NUMBER_OF_INDIVIDUALS):
-            generation_individuals[i] = mate(**selected_parents[i])
+            # mate parents to create new generation
+            new_generation_individuals.append(mate(**selected_parents[i]))
+        print("generation_individuals after mated ones: ", str(len(new_generation_individuals)))
 
-    print("fitness: ", best_individual["fitness"])
 
-    print(best_individual["solution"].regularInsertedKMeters)
-    print("newInsertedKMeters: ", best_individual["solution"].newInsertedKMeters)
-    print("fitness: ", best_individual["solution"].fitness)
+        # add elite individuals to generation_individuals
+        for i in range(TOTAL_NUMBER_OF_ELITE_INDIVIDUALS):
+            new_generation_individuals.append(sorted_fitness_list[i]["solution"])
+        print("generation_individuals after elite ones: ", str(len(new_generation_individuals)))
+
+
+        # add random_individuals to generation_individuals
+        new_generation_individuals.extend(ga.createInitialPopulation(TOTAL_NUMBER_OF_RANDOM_INDIVIDUALS, problem))
+        print("generation_individuals after random: ", str(len(new_generation_individuals)))
+
+        #updates the current_population
+        current_generation_individuals = new_generation_individuals
+        new_generation_individuals = []
+        print("generation: " + str(gen))
+
+    # print("fitness: ", best_individual["fitness"])
+
+    # print(best_individual["solution"].regularInsertedKMeters)
+    # print("newInsertedKMeters: ", best_individual["solution"].newInsertedKMeters)
+    # print("fitness: ", best_individual["solution"].fitness)
 
     # ga.mutationAddLane(best_individual)
     ga.mutationAddLaneOnRoad(best_individual["solution"])
