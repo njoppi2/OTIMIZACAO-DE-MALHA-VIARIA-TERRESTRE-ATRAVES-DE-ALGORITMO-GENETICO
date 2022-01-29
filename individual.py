@@ -1,4 +1,5 @@
 import osmnx as ox
+import random
 import networkx as nx
 import matplotlib.pyplot as pyplot
 import utm
@@ -10,6 +11,9 @@ class Individual:
         self.problem = problem
         self.fitness = None
         self.vehiclesByRoad = None
+        # variable ↓ for crossover
+        # for the tracks with new number of lanes
+        self.newLanes = {}
         self.tracks = {}  # positive or negative number of adapted lanes
         self.newTracks = {}
         # for preexisting tracks
@@ -53,6 +57,39 @@ class Individual:
     def getLaneValue(self, tid):
         return self.tracks[tid]
 
+    # method for crossover
+    def getModifications(self):
+        return {
+            "newTracks": self.newTracks,
+            "newLanes": self.newLanes
+        }
+
+    # method for crossover
+    # each modification has a 50% of being returned
+    def getRandomModifications(self):
+        modifications = self.getModifications()
+
+        randomNewTracks = dict(filter(lambda _: random.random() > 0.5, modifications["newTracks"]))
+        randomNewLanes = dict(filter(lambda _: random.random() > 0.5, modifications["newLanes"]))
+
+        return {
+            "newTracks": randomNewTracks,
+            "newLanes": randomNewLanes
+        }
+
+    # method for crossover
+    def setModifications(self, problem, fatherModifications, motherModifications):
+        newTracks = fatherModifications["newTracks"] + motherModifications["newTracks"]
+        newLanes = fatherModifications["newLanes"] + motherModifications["newLanes"]
+
+        for source in newTracks.keys():
+            for target in newTracks[source].keys():
+                for track in newTracks[source][target]:
+                    self.insertAdditionalTrack(problem, track["s"], track["t"], track["distance"], track["lanes"], track["maxspeed"])
+
+        for tid, newNoLanes in newLanes.items():
+            self.setLaneValue(problem, tid, newNoLanes)
+    
     # set the number of lanes adapted in a track
     def setLaneValue(self, tid, newNoLanes):
         i = int(tid)
@@ -61,6 +98,7 @@ class Individual:
         if self.tracks[tid] < 0:
             self.regularRemovedKMeters -= self.tracks[tid] * self.problem.tracks[i]["distance"] / 1000.0
         self.tracks[tid] = newNoLanes
+        self.newLanes[tid] = newNoLanes
         if newNoLanes > 0:
             self.regularInsertedKMeters += newNoLanes * self.problem.tracks[i]["distance"] / 1000.0
         if newNoLanes < 0:

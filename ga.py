@@ -5,7 +5,6 @@ from problem_definition import ProblemDefinition
 from user_model import UMSalmanAlaswad_I
 
 
-
 class GeneticAlgorithm:
     def __init__(self, problem):
         self.problem = problem
@@ -136,13 +135,13 @@ class GeneticAlgorithm:
 
         return individual
 
-def run_genetic_algorithm(place_name):
-
-    global problem
+def run_genetic_algorithm(problem):
 
     TOTAL_NUMBER_OF_INDIVIDUALS = 20
-    TOTAL_NUMBER_OF_GENERATIONS = 100
-    problem = ProblemDefinition(place_name + ".net")
+    TOTAL_NUMBER_OF_GENERATIONS = 10
+    TOTAL_NUMBER_OF_ELITE_INDIVIDUALS = 2
+    TOTAL_NUMBER_OF_RANDOM_INDIVIDUALS = int(TOTAL_NUMBER_OF_INDIVIDUALS / 2)
+    TOTAL_NUMBER_OF_MATED_INDIVIDUALS = TOTAL_NUMBER_OF_INDIVIDUALS - TOTAL_NUMBER_OF_ELITE_INDIVIDUALS - TOTAL_NUMBER_OF_RANDOM_INDIVIDUALS
     ga = GeneticAlgorithm(problem)
     userModel = UMSalmanAlaswad_I()
     fitness_list = []
@@ -152,7 +151,33 @@ def run_genetic_algorithm(place_name):
         "fitness": 0,
         "solution": None
     }
-    generation_individuals = ga.createInitialPopulation(TOTAL_NUMBER_OF_INDIVIDUALS)
+
+    current_generation_individuals = ga.createInitialPopulation(TOTAL_NUMBER_OF_INDIVIDUALS)
+    new_generation_individuals = []
+
+    #receives two Individuals, does crossover, mutation, and returns a new Individual
+    def mate(father, mother):
+        # do crossover
+        fatherModifications = father.getRandomModifications()
+        motherModifications = mother.getRandomModifications()
+
+        child = Individual(problem)
+        child.setModifications(problem, fatherModifications, motherModifications)
+        mutation(child)
+
+        return child
+
+    def mutation(individual):
+        aleatoryIndividualsMutationIndex = random.sample(range(TOTAL_NUMBER_OF_INDIVIDUALS), int(len(individual.newTracks)*ga.mutationRate))
+        for i in range(len(individual.newTracks)):
+            if i in aleatoryIndividualsMutationIndex:
+                randomNumber = random.randint(1, 2)
+                if randomNumber == 1:
+                    ga.mutationAddLane(individual.newTracks[i])
+                elif randomNumber == 2:
+                    ga.mutationAddLaneOnRoad(individual.newTracks[i])
+
+        return individual
 
     def getAleatoryTrackIdsForMutation():
         trackIds = []
@@ -181,15 +206,16 @@ def run_genetic_algorithm(place_name):
     def draw_individual():
         random_number = random.randint(0, total_fitness_sum)
 
+        #stores the sum of the population fitness until the current individual
         previous_fitness_sum = 0
 
         # find winner individual
         for i in range(TOTAL_NUMBER_OF_INDIVIDUALS):
 
-            individual_fitness = fitness_list[i]
+            individual_fitness = fitness_list[i]["fitness"]
             previous_fitness_sum += individual_fitness
-            if previous_fitness_sum > random_number:
-                return generation_individuals[i]
+            if previous_fitness_sum >= random_number:
+                return current_generation_individuals[i]
         pass
 
     # runs the genetic algorithm on the number of generations specified
@@ -198,19 +224,22 @@ def run_genetic_algorithm(place_name):
         # fills the fitness_list and calculates total_fitness_sum
         for i in range(TOTAL_NUMBER_OF_INDIVIDUALS):
 
-            individual = generation_individuals[i]
+            individual = current_generation_individuals[i]
             # individual_fitness = userModel.fitness(individual)
-            individual_fitness = random.randint(0, 100)
-            fitness_list.append(individual_fitness)
-            total_fitness_sum += fitness_list[i]
+            individual_fitness = random.randint(0, 100) #gambiarra
+            fitness_list.append({
+                "solution": individual,
+                "fitness": individual_fitness
+            })
+            total_fitness_sum += fitness_list[i]["fitness"]
 
-            # updates the best fitness found
-            if individual_fitness > best_individual["fitness"]:
-                best_individual["fitness"] = individual_fitness
-                best_individual["solution"] = individual
+        # we need to sort the fitness_list by their fitness in order to easily find the best individuals
+        sorted_fitness_list = sorted(fitness_list, key=lambda d: d["fitness"], reverse=True)
+        best_individual = sorted_fitness_list[0]
+
 
         # selection / create selected_parents list
-        for i in range(TOTAL_NUMBER_OF_INDIVIDUALS):
+        for i in range(TOTAL_NUMBER_OF_MATED_INDIVIDUALS):
 
             father = draw_individual()
             mother = draw_individual()
@@ -223,15 +252,30 @@ def run_genetic_algorithm(place_name):
                 "mother": mother
             })
 
-        # mate parents to create new generation
-        for i in range(TOTAL_NUMBER_OF_INDIVIDUALS):
-            generation_individuals[i] = mate(**selected_parents[i])
+            # mate parents to create new generation
+            new_generation_individuals.append(mate(**selected_parents[i]))
 
-    print("fitness: ", best_individual["fitness"])
 
-    print("regularInsertedKMeters: ", best_individual["solution"].regularInsertedKMeters)
-    print("newInsertedKMeters: ", best_individual["solution"].newInsertedKMeters)
-    print("fitness: ", best_individual["solution"].fitness)
+        # add elite individuals to generation_individuals
+        for i in range(TOTAL_NUMBER_OF_ELITE_INDIVIDUALS):
+            new_generation_individuals.append(sorted_fitness_list[i]["solution"])
+
+
+        # add random_individuals to generation_individuals
+        new_generation_individuals.extend(ga.createInitialPopulation(TOTAL_NUMBER_OF_RANDOM_INDIVIDUALS))
+
+        #updates the current_population
+        current_generation_individuals = new_generation_individuals
+        new_generation_individuals = []
+        fitness_list = []
+        total_fitness_sum = 0
+        print("generation: " + str(gen))
+
+    # print("fitness: ", best_individual["fitness"])
+
+    # print("regularInsertedKMeters: ", best_individual["solution"].regularInsertedKMeters)
+    # print("newInsertedKMeters: ", best_individual["solution"].newInsertedKMeters)
+    # print("fitness: ", best_individual["solution"].fitness)
 
     userModel.fitness(problem, best_individual["solution"])
     best_individual["solution"].printDesign(problem)

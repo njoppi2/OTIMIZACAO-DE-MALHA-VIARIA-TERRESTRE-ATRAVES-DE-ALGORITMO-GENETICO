@@ -25,9 +25,10 @@ def create_net_file_from(place_name):
     # more in: https://geoffboeing.com/2016/11/osmnx-python-street-networks/
     graph = ox.graph_from_place(place_name, simplify=False,  network_type='drive')
 
+    file_name = outputName+".net"
 
     # converts "graph" to a simpler .net file
-    nx.write_pajek(graph, outputName+".net")
+    nx.write_pajek(graph, file_name)
 
     # nx.write_graphml(graph, "output.graphml")
     # ox.save_graph_xml(graph, filepath='output.osm')
@@ -35,3 +36,4 @@ def create_net_file_from(place_name):
 
 
     #pyplot.tight_layout()
+    return file_name
