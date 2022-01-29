@@ -42,7 +42,7 @@ class GeneticAlgorithm:
                 node = track["t"]
         # updating new lanes
         for trackId in trackList:
-            ind.setLaneValue(self.problem, str(trackId), +1)
+            ind.setLaneValue(str(trackId), +1)
 
     def mutationAddLaneOnRoad(self, ind, trackIds):
 
@@ -65,50 +65,50 @@ class GeneticAlgorithm:
             # finding the road starting node
             nodeStart = track["s"]
             lastNode = track["t"]
-            if nodeStart not in problem.adjLst: break
-            while len(list(problem.adjLst[nodeStart])) == 1:
+            if nodeStart not in self.problem.adjLst: break
+            while len(list(self.problem.adjLst[nodeStart])) == 1:
                 if nodeStart != lastNode:
-                    track = problem.adjLst[nodeStart][lastNode][0]
+                    track = self.problem.adjLst[nodeStart][lastNode][0]
                     metersReached += track["distance"]
                     trackId = int(track["id"])
                     trackList.append(trackId)
                     lastNode = nodeStart
-                    if nodeStart in problem.adjLstInv:
-                        nodeStart = next(iter(problem.adjLstInv[nodeStart]))
+                    if nodeStart in self.problem.adjLstInv:
+                        nodeStart = next(iter(self.problem.adjLstInv[nodeStart]))
                 else: break
 
             # finding the road last node
 
             lastNode = track["t"]
-            if lastNode not in problem.adjLst: break
-            while len(list(problem.adjLst[lastNode])) == 1:
-                nextNode = next(iter(problem.adjLst[lastNode]))
-                track = problem.adjLst[lastNode][nextNode][0]
+            if lastNode not in self.problem.adjLst: break
+            while len(list(self.problem.adjLst[lastNode])) == 1:
+                nextNode = next(iter(self.problem.adjLst[lastNode]))
+                track = self.problem.adjLst[lastNode][nextNode][0]
                 metersReached += track["distance"]
                 trackId = int(track["id"])
                 trackList.append(trackId)
                 lastNode = nextNode
-                if lastNode not in problem.adjLst: break
+                if lastNode not in self.problem.adjLst: break
 
         if metersReached < metersThreshold:
             # updating new lanes
             for trackId in trackList:
-                ind.setLaneValue(self.problem, str(trackId), +1)
+                ind.setLaneValue(str(trackId), +1)
 
     def fitness(self, ind):
         return None
 
-    def createInitialPopulation(self, size, initialProblem):
+    def createInitialPopulation(self, size):
         initialPopulation = list()
         count = 0
         while count < size:
-            initialPopulation.append(self.createNewRadomIndividual(initialProblem))
+            initialPopulation.append(self.createNewRadomIndividual())
             count += 1
         return initialPopulation
 
-    def createNewRadomIndividual(self, initialProblem):
+    def createNewRadomIndividual(self):
         # create the individual
-        individual = Individual(initialProblem)
+        individual = Individual(self.problem)
 
         # number of the iterations
         count = random.randint(1, 100)
@@ -126,10 +126,10 @@ class GeneticAlgorithm:
             # random number for the option
             randomNumber = random.randint(1, 3)
             if randomNumber == 1:
-                individual.insertAdditionalTrack(problem, aleatoryTrackSource, aleatoryTrackTarget, 1500000, 1,
-                                                 problem.maxSpeed)
+                individual.insertAdditionalTrack(aleatoryTrackSource, aleatoryTrackTarget, 1500000, 1,
+                                                 self.problem.maxSpeed)
             elif randomNumber == 2:
-                individual.setLaneValue(initialProblem, aleatoryTrackId, random.randint(1, 5))
+                individual.setLaneValue(aleatoryTrackId, random.randint(1, 5))
             else:
                 individual.removeAdditionalTrack(aleatoryTrackSource, aleatoryTrackTarget, aleatoryTrackId)
             count -= 1
@@ -152,7 +152,7 @@ def run_genetic_algorithm(place_name):
         "fitness": 0,
         "solution": None
     }
-    generation_individuals = ga.createInitialPopulation(TOTAL_NUMBER_OF_INDIVIDUALS, problem)
+    generation_individuals = ga.createInitialPopulation(TOTAL_NUMBER_OF_INDIVIDUALS)
 
     def getAleatoryTrackIdsForMutation():
         trackIds = []
@@ -234,4 +234,4 @@ def run_genetic_algorithm(place_name):
     print("fitness: ", best_individual["solution"].fitness)
 
     userModel.fitness(problem, best_individual["solution"])
-    # best_individual["solution"].printDesign(problem)
+    best_individual["solution"].printDesign(problem)

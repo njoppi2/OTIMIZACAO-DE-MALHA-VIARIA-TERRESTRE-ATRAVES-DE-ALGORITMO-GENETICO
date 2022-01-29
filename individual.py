@@ -7,6 +7,7 @@ import utm
 class Individual:
 
     def __init__(self, problem):
+        self.problem = problem
         self.fitness = None
         self.vehiclesByRoad = None
         self.tracks = {}  # positive or negative number of adapted lanes
@@ -53,26 +54,26 @@ class Individual:
         return self.tracks[tid]
 
     # set the number of lanes adapted in a track
-    def setLaneValue(self, problem, tid, newNoLanes):
+    def setLaneValue(self, tid, newNoLanes):
         i = int(tid)
         if self.tracks[tid] > 0:
-            self.regularInsertedKMeters -= self.tracks[tid] * problem.tracks[i]["distance"] / 1000.0
+            self.regularInsertedKMeters -= self.tracks[tid] * self.problem.tracks[i]["distance"] / 1000.0
         if self.tracks[tid] < 0:
-            self.regularRemovedKMeters -= self.tracks[tid] * problem.tracks[i]["distance"] / 1000.0
+            self.regularRemovedKMeters -= self.tracks[tid] * self.problem.tracks[i]["distance"] / 1000.0
         self.tracks[tid] = newNoLanes
         if newNoLanes > 0:
-            self.regularInsertedKMeters += newNoLanes * problem.tracks[i]["distance"] / 1000.0
+            self.regularInsertedKMeters += newNoLanes * self.problem.tracks[i]["distance"] / 1000.0
         if newNoLanes < 0:
-            self.regularRemovedKMeters += newNoLanes * problem.tracks[i]["distance"] / 1000.0
+            self.regularRemovedKMeters += newNoLanes * self.problem.tracks[i]["distance"] / 1000.0
 
     # insert a new nonregular track between two nodes
-    def insertAdditionalTrack(self, problem, source, target, distance, lanes, maxspeed):
+    def insertAdditionalTrack(self, source, target, distance, lanes, maxspeed):
         if source not in self.newTracks:
             self.newTracks[source] = {}
         if target not in self.newTracks[source]:
             self.newTracks[source][target] = []
         self.nextTracksId += 1
-        tt = (distance / 1000.0 * (1 / maxspeed)) / problem.minTT
+        tt = (distance / 1000.0 * (1 / maxspeed)) / self.problem.minTT
         self.newTracks[source][target].append(
             {"id": "nt_" + str(self.nextTracksId), "s": source, "t": target, "distance": distance, "lanes": lanes,
              "maxspeed": maxspeed, "tt": tt})
@@ -97,9 +98,9 @@ class Individual:
 
         return True
 
-    def printDesign(self, problem, outputFilename="output", outputFormat=None):
+    def printDesign(self, outputFilename="output", outputFormat=None):
         edgeColors = []
-        for track in problem.tracks:  # regular tracks
+        for track in self.problem.tracks:  # regular tracks
             if (track["lanes"] + self.tracks[track["id"]]) == 0: continue
             color = ""
             if self.vehiclesByRoad[track["id"]] <= 7 * (track["distance"] / 1000.0) * (
@@ -138,11 +139,11 @@ class Individual:
         graph = nx.MultiDiGraph()
 
         i = 0
-        for node in problem.nodes:
-            graph.add_node(str(problem.nodes[node]["id"]))
+        for node in self.problem.nodes:
+            graph.add_node(str(self.problem.nodes[node]["id"]))
 
         # arcs
-        for track in problem.tracks:  # regular tracks
+        for track in self.problem.tracks:  # regular tracks
             if (track["lanes"] + self.tracks[track["id"]]) == 0: continue
             graph.add_edge(track["s"], track["t"])
         for s in self.newTracks:  # non-regular tracks
@@ -153,8 +154,8 @@ class Individual:
         nodePos = {}
         # for node in nodes:
         for (node, data) in graph.nodes(data=True):
-            if node not in problem.nodes: continue
-            l = utm.from_latlon(problem.nodes[node]["lat"], problem.nodes[node]["long"])
+            if node not in self.problem.nodes: continue
+            l = utm.from_latlon(self.problem.nodes[node]["lat"], self.problem.nodes[node]["long"])
             x, y = l[0], l[1]
             nodePos[node] = [x, y]
 
@@ -164,9 +165,9 @@ class Individual:
             i = int(tid)
             lanes = self.tracks[tid]
             if lanes > 0:
-                edgeLabels[(problem.tracks[i]["s"], problem.tracks[i]["t"])] = "+" + str(lanes)
+                edgeLabels[(self.problem.tracks[i]["s"], self.problem.tracks[i]["t"])] = "+" + str(lanes)
             if lanes < 0:
-                edgeLabels[(problem.tracks[i]["s"], problem.tracks[i]["t"])] = str(lanes)
+                edgeLabels[(self.problem.tracks[i]["s"], self.problem.tracks[i]["t"])] = str(lanes)
         for s in self.newTracks:  # non-regular tracks
             for t in self.newTracks[s]:
                 for track in self.newTracks[s][t]:
