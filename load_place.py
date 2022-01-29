@@ -21,16 +21,17 @@ def create_net_file_from(place_name):
 
     outputName=place_name #.replace(" ", "_")
 
+    # loads driveable streets as a graph from the place name
+    # more in: https://geoffboeing.com/2016/11/osmnx-python-street-networks/
     graph = ox.graph_from_place(place_name, simplify=False,  network_type='drive')
 
-    type(graph)
-    nx.classes.multidigraph.MultiDiGraph
 
-
+    # converts "graph" to a simpler .net file
     nx.write_pajek(graph, outputName+".net")
-    #nx.write_graphml(graph, "output.graphml")
-    #ox.save_graph_xml(graph, filepath='output.osm')
-    fig, ax = ox.plot_graph(graph)
+
+    # nx.write_graphml(graph, "output.graphml")
+    # ox.save_graph_xml(graph, filepath='output.osm')
+    # fig, ax = ox.plot_graph(graph)
 
 
     #pyplot.tight_layout()
