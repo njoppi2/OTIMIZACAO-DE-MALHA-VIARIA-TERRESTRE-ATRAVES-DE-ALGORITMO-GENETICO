@@ -78,17 +78,17 @@ class Individual:
         }
 
     # method for crossover
-    def setModifications(self, problem, fatherModifications, motherModifications):
+    def setModifications(self, fatherModifications, motherModifications):
         newTracks = fatherModifications["newTracks"] + motherModifications["newTracks"]
         newLanes = fatherModifications["newLanes"] + motherModifications["newLanes"]
 
         for source in newTracks.keys():
             for target in newTracks[source].keys():
                 for track in newTracks[source][target]:
-                    self.insertAdditionalTrack(problem, track["s"], track["t"], track["distance"], track["lanes"], track["maxspeed"])
+                    self.insertAdditionalTrack(self.problem, track["s"], track["t"], track["distance"], track["lanes"], track["maxspeed"])
 
         for tid, newNoLanes in newLanes.items():
-            self.setLaneValue(problem, tid, newNoLanes)
+            self.setLaneValue(self.problem, tid, newNoLanes)
     
     # set the number of lanes adapted in a track
     def setLaneValue(self, tid, newNoLanes):

@@ -138,12 +138,12 @@ class GeneticAlgorithm:
 def run_genetic_algorithm(problem):
 
     TOTAL_NUMBER_OF_INDIVIDUALS = 20
-    TOTAL_NUMBER_OF_GENERATIONS = 10
+    TOTAL_NUMBER_OF_GENERATIONS = 3
     TOTAL_NUMBER_OF_ELITE_INDIVIDUALS = 2
     TOTAL_NUMBER_OF_RANDOM_INDIVIDUALS = int(TOTAL_NUMBER_OF_INDIVIDUALS / 2)
     TOTAL_NUMBER_OF_MATED_INDIVIDUALS = TOTAL_NUMBER_OF_INDIVIDUALS - TOTAL_NUMBER_OF_ELITE_INDIVIDUALS - TOTAL_NUMBER_OF_RANDOM_INDIVIDUALS
     ga = GeneticAlgorithm(problem)
-    userModel = UMSalmanAlaswad_I()
+    userModel = UMSalmanAlaswad_I(problem)
     fitness_list = []
     selected_parents = []
     total_fitness_sum = 0
@@ -162,7 +162,7 @@ def run_genetic_algorithm(problem):
         motherModifications = mother.getRandomModifications()
 
         child = Individual(problem)
-        child.setModifications(problem, fatherModifications, motherModifications)
+        child.setModifications(fatherModifications, motherModifications)
         mutation(child)
 
         return child
@@ -277,5 +277,5 @@ def run_genetic_algorithm(problem):
     # print("newInsertedKMeters: ", best_individual["solution"].newInsertedKMeters)
     # print("fitness: ", best_individual["solution"].fitness)
 
-    userModel.fitness(problem, best_individual["solution"])
-    best_individual["solution"].printDesign(problem)
+    userModel.fitness(best_individual["solution"])
+    best_individual["solution"].printDesign()
