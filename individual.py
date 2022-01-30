@@ -69,26 +69,42 @@ class Individual:
     def getRandomModifications(self):
         modifications = self.getModifications()
 
-        randomNewTracks = dict(filter(lambda _: random.random() > 0.5, modifications["newTracks"]))
-        randomNewLanes = dict(filter(lambda _: random.random() > 0.5, modifications["newLanes"]))
+        randomNewTracks = self.getAleatoryNewTracksModifications(modifications["newTracks"])
+        randomNewLanes = self.getAleatoryNewLanesModifications(modifications["newLanes"])
 
         return {
             "newTracks": randomNewTracks,
             "newLanes": randomNewLanes
         }
 
+    def getAleatoryNewTracksModifications(self, modifications):
+        randomNewTracks = modifications
+        for i in range(len(modifications)):
+            randomKeyForNewTracks = random.choice(list(randomNewTracks.keys()))
+            if random.random() < 0.5:
+                randomNewTracks.pop(randomKeyForNewTracks)
+        return randomNewTracks
+
+    def getAleatoryNewLanesModifications(self, modifications):
+        randomNewLanes = modifications
+        for i in range(len(modifications)):
+            randomKeyForNewLanes = random.choice(list(randomNewLanes.keys()))
+            if random.random() < 0.5:
+                randomNewLanes.pop(randomKeyForNewLanes)
+        return randomNewLanes
+
     # method for crossover
     def setModifications(self, fatherModifications, motherModifications):
-        newTracks = fatherModifications["newTracks"] + motherModifications["newTracks"]
-        newLanes = fatherModifications["newLanes"] + motherModifications["newLanes"]
+        newTracks = {**fatherModifications["newTracks"], **motherModifications["newTracks"]}
+        newLanes = {**fatherModifications["newLanes"], **motherModifications["newLanes"]}
 
         for source in newTracks.keys():
             for target in newTracks[source].keys():
                 for track in newTracks[source][target]:
-                    self.insertAdditionalTrack(self.problem, track["s"], track["t"], track["distance"], track["lanes"], track["maxspeed"])
+                    self.insertAdditionalTrack(track["s"], track["t"], track["distance"], track["lanes"], track["maxspeed"])
 
         for tid, newNoLanes in newLanes.items():
-            self.setLaneValue(self.problem, tid, newNoLanes)
+            self.setLaneValue(tid, newNoLanes)
     
     # set the number of lanes adapted in a track
     def setLaneValue(self, tid, newNoLanes):

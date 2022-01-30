@@ -167,18 +167,6 @@ def run_genetic_algorithm(problem):
 
         return child
 
-    def mutation(individual):
-        aleatoryIndividualsMutationIndex = random.sample(range(TOTAL_NUMBER_OF_INDIVIDUALS), int(len(individual.newTracks)*ga.mutationRate))
-        for i in range(len(individual.newTracks)):
-            if i in aleatoryIndividualsMutationIndex:
-                randomNumber = random.randint(1, 2)
-                if randomNumber == 1:
-                    ga.mutationAddLane(individual.newTracks[i])
-                elif randomNumber == 2:
-                    ga.mutationAddLaneOnRoad(individual.newTracks[i])
-
-        return individual
-
     def getAleatoryTrackIdsForMutation():
         trackIds = []
         while len(trackIds) < round((len(problem.tracks) - 1) * ga.mutationRate):
@@ -197,11 +185,6 @@ def run_genetic_algorithm(problem):
                 ga.mutationAddLaneOnRoad(ind, trackIds)
         return ind
 
-    def mate(father, mother):
-        # do crossover
-        # do mutation
-        # return new individual ↓
-        return mutation(Individual(problem))
 
     def draw_individual():
         random_number = random.randint(0, total_fitness_sum)
