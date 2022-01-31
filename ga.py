@@ -2,7 +2,6 @@ import random
 from individual import Individual
 
 from problem_definition import ProblemDefinition
-from user_model import UMSalmanAlaswad_I
 
 
 class GeneticAlgorithm:
@@ -136,21 +135,20 @@ class GeneticAlgorithm:
         return individual
 
 def run_genetic_algorithm(problem):
+    best_individual_history = []
+    total_fitness_sum_history = []
 
     TOTAL_NUMBER_OF_INDIVIDUALS = 20
-    TOTAL_NUMBER_OF_GENERATIONS = 3
+    TOTAL_NUMBER_OF_GENERATIONS = 15
     TOTAL_NUMBER_OF_ELITE_INDIVIDUALS = 2
     TOTAL_NUMBER_OF_RANDOM_INDIVIDUALS = int(TOTAL_NUMBER_OF_INDIVIDUALS / 2)
     TOTAL_NUMBER_OF_MATED_INDIVIDUALS = TOTAL_NUMBER_OF_INDIVIDUALS - TOTAL_NUMBER_OF_ELITE_INDIVIDUALS - TOTAL_NUMBER_OF_RANDOM_INDIVIDUALS
+    SELECTION_TECHNIQUE = "torneio"
     ga = GeneticAlgorithm(problem)
-    userModel = UMSalmanAlaswad_I(problem)
     fitness_list = []
     selected_parents = []
     total_fitness_sum = 0
-    best_individual = {
-        "fitness": 0,
-        "solution": None
-    }
+    best_individual = None
 
     current_generation_individuals = ga.createInitialPopulation(TOTAL_NUMBER_OF_INDIVIDUALS)
     new_generation_individuals = []
@@ -186,20 +184,37 @@ def run_genetic_algorithm(problem):
         return ind
 
 
-    def draw_individual():
-        random_number = random.randint(0, total_fitness_sum)
+    def draw_individual(selection_technique):
+        if selection_technique == "roleta":
+            random_number = random.randint(0, int(total_fitness_sum))
 
-        #stores the sum of the population fitness until the current individual
-        previous_fitness_sum = 0
+            #stores the sum of the population fitness until the current individual
+            previous_fitness_sum = 0
 
-        # find winner individual
-        for i in range(TOTAL_NUMBER_OF_INDIVIDUALS):
+            # find winner individual
+            for i in range(TOTAL_NUMBER_OF_INDIVIDUALS):
 
-            individual_fitness = fitness_list[i]["fitness"]
-            previous_fitness_sum += individual_fitness
-            if previous_fitness_sum >= random_number:
-                return current_generation_individuals[i]
-        pass
+                individual_fitness = fitness_list[i].fitness
+                previous_fitness_sum += individual_fitness
+                if previous_fitness_sum >= random_number:
+                    return current_generation_individuals[i]
+
+        elif selection_technique == "torneio":
+            # picks k random individuals from current_generation_individuals
+            competitors = random.choices(current_generation_individuals, k=2)
+
+            # returns competitor with max fitness
+            winner = max(competitors, key=lambda ind: ind.fitness)
+
+            return winner
+
+        elif selection_technique == "aleatorio":
+            
+            # returns ANY individual, with no criteria
+            return random.choice(current_generation_individuals)
+        
+
+
 
     # runs the genetic algorithm on the number of generations specified
     for gen in range(TOTAL_NUMBER_OF_GENERATIONS):
@@ -208,27 +223,26 @@ def run_genetic_algorithm(problem):
         for i in range(TOTAL_NUMBER_OF_INDIVIDUALS):
 
             individual = current_generation_individuals[i]
-            # individual_fitness = userModel.fitness(individual)
-            individual_fitness = random.randint(0, 100) #gambiarra
-            fitness_list.append({
-                "solution": individual,
-                "fitness": individual_fitness
-            })
-            total_fitness_sum += fitness_list[i]["fitness"]
+            individual.calculateFitness()
+            fitness_list.append(individual)
+            total_fitness_sum += individual.fitness or 0
 
         # we need to sort the fitness_list by their fitness in order to easily find the best individuals
-        sorted_fitness_list = sorted(fitness_list, key=lambda d: d["fitness"], reverse=True)
+        sorted_fitness_list = sorted(fitness_list, key=lambda d: d.fitness, reverse=True)
         best_individual = sorted_fitness_list[0]
+
+        total_fitness_sum_history.append(str(total_fitness_sum))
+        best_individual_history.append(str(best_individual.fitness) + "\t" + str(best_individual))
 
 
         # selection / create selected_parents list
         for i in range(TOTAL_NUMBER_OF_MATED_INDIVIDUALS):
 
-            father = draw_individual()
-            mother = draw_individual()
+            father = draw_individual(SELECTION_TECHNIQUE)
+            mother = draw_individual(SELECTION_TECHNIQUE)
 
             while mother == father:
-                mother = draw_individual()
+                mother = draw_individual(SELECTION_TECHNIQUE)
 
             selected_parents.append({
                 "father": father,
@@ -241,7 +255,7 @@ def run_genetic_algorithm(problem):
 
         # add elite individuals to generation_individuals
         for i in range(TOTAL_NUMBER_OF_ELITE_INDIVIDUALS):
-            new_generation_individuals.append(sorted_fitness_list[i]["solution"])
+            new_generation_individuals.append(sorted_fitness_list[i])
 
 
         # add random_individuals to generation_individuals
@@ -254,11 +268,8 @@ def run_genetic_algorithm(problem):
         total_fitness_sum = 0
         print("generation: " + str(gen))
 
-    # print("fitness: ", best_individual["fitness"])
+    print("\n\nTOTAL_FITNESS_SUM_HISTORY:\n\n"+"\n".join(total_fitness_sum_history))
+    print("\n\nBEST_INDIVIDUAL_HISTORY:\n\n"+"\n".join(best_individual_history))
 
-    # print("regularInsertedKMeters: ", best_individual["solution"].regularInsertedKMeters)
-    # print("newInsertedKMeters: ", best_individual["solution"].newInsertedKMeters)
-    # print("fitness: ", best_individual["solution"].fitness)
 
-    userModel.fitness(best_individual["solution"])
-    best_individual["solution"].printDesign()
+    best_individual.printDesign()

@@ -1,4 +1,5 @@
 import osmnx as ox
+from user_model import UMSalmanAlaswad_I
 import random
 import networkx as nx
 import matplotlib.pyplot as pyplot
@@ -8,6 +9,8 @@ import utm
 class Individual:
 
     def __init__(self, problem):
+
+        self.userModel = UMSalmanAlaswad_I(problem)
         self.problem = problem
         self.fitness = None
         self.vehiclesByRoad = None
@@ -29,9 +32,6 @@ class Individual:
 
 
     #Funções gets faltantes
-    #return the fitness metric
-    def getFitnestracks(self):
-        return self.fitness
 
     #return the vehicles by roads
     def getVehiclesByRoad(self):
@@ -78,7 +78,7 @@ class Individual:
         }
 
     def getAleatoryNewTracksModifications(self, modifications):
-        randomNewTracks = modifications
+        randomNewTracks = modifications.copy()
         for i in range(len(modifications)):
             randomKeyForNewTracks = random.choice(list(randomNewTracks.keys()))
             if random.random() < 0.5:
@@ -86,7 +86,7 @@ class Individual:
         return randomNewTracks
 
     def getAleatoryNewLanesModifications(self, modifications):
-        randomNewLanes = modifications
+        randomNewLanes = modifications.copy()
         for i in range(len(modifications)):
             randomKeyForNewLanes = random.choice(list(randomNewLanes.keys()))
             if random.random() < 0.5:
@@ -105,6 +105,8 @@ class Individual:
 
         for tid, newNoLanes in newLanes.items():
             self.setLaneValue(tid, newNoLanes)
+
+        self.resetFitness()
     
     # set the number of lanes adapted in a track
     def setLaneValue(self, tid, newNoLanes):
@@ -120,6 +122,16 @@ class Individual:
         if newNoLanes < 0:
             self.regularRemovedKMeters += newNoLanes * self.problem.tracks[i]["distance"] / 1000.0
 
+        self.resetFitness()
+
+    #return the fitness metric
+    def calculateFitness(self):
+        self.fitness = self.userModel.fitness(self)
+        return self.fitness
+
+    def resetFitness(self):
+        self.fitness = None
+
     # insert a new nonregular track between two nodes
     def insertAdditionalTrack(self, source, target, distance, lanes, maxspeed):
         if source not in self.newTracks:
@@ -132,6 +144,7 @@ class Individual:
             {"id": "nt_" + str(self.nextTracksId), "s": source, "t": target, "distance": distance, "lanes": lanes,
              "maxspeed": maxspeed, "tt": tt})
         self.newInsertedKMeters += lanes * distance / 1000.0
+        self.resetFitness()
 
     # remove a new nonregular track between two nodes
     def removeAdditionalTrack(self, source, target, tid):
@@ -149,6 +162,7 @@ class Individual:
 
         self.newInsertedKMeters -= trackR["lanes"] * trackR["distance"]
         self.newTracks[source][target].remove(trackR)
+        self.resetFitness()
 
         return True
 
