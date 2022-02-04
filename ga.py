@@ -139,7 +139,7 @@ def run_genetic_algorithm(problem):
     total_fitness_sum_history = []
 
     TOTAL_NUMBER_OF_INDIVIDUALS = 20
-    TOTAL_NUMBER_OF_GENERATIONS = 15
+    TOTAL_NUMBER_OF_GENERATIONS = 30
     TOTAL_NUMBER_OF_ELITE_INDIVIDUALS = 2
     TOTAL_NUMBER_OF_RANDOM_INDIVIDUALS = int(TOTAL_NUMBER_OF_INDIVIDUALS / 2)
     TOTAL_NUMBER_OF_MATED_INDIVIDUALS = TOTAL_NUMBER_OF_INDIVIDUALS - TOTAL_NUMBER_OF_ELITE_INDIVIDUALS - TOTAL_NUMBER_OF_RANDOM_INDIVIDUALS
@@ -201,7 +201,7 @@ def run_genetic_algorithm(problem):
 
         elif selection_technique == "torneio":
             # picks k random individuals from current_generation_individuals
-            competitors = random.choices(current_generation_individuals, k=2)
+            competitors = random.choices(current_generation_individuals, k=5)
 
             # returns competitor with max fitness
             winner = max(competitors, key=lambda ind: ind.fitness)

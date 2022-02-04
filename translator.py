@@ -23,7 +23,7 @@ def haversine(lon1, lat1, lon2, lat2):
     km = 6371* c
     return km * 1000.0
 
-place_name =  "Forquilhinha, Brazil"
+place_name =  "Borá, Brazil"
 inputFile = place_name+'.net'
 
 nodes = {}

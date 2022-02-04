@@ -227,20 +227,34 @@ class Individual:
             x, y = l[0], l[1]
             nodePos[node] = [x, y]
 
+        # remove new nodes 
+        nodosGraph = []
+
+        for i in graph.nodes:
+            if i not in nodePos:
+                nodosGraph.append(i)
+
+        for j in nodosGraph:
+            graph.remove_node(j)
+
         # labeling arcs
         edgeLabels = {}
         for tid in self.tracks:  # regular
             i = int(tid)
-            lanes = self.tracks[tid]
-            if lanes > 0:
-                edgeLabels[(self.problem.tracks[i]["s"], self.problem.tracks[i]["t"])] = "+" + str(lanes)
-            if lanes < 0:
-                edgeLabels[(self.problem.tracks[i]["s"], self.problem.tracks[i]["t"])] = str(lanes)
+            # don't show labels from new nodes
+            if i not in nodosGraph:
+                lanes = self.tracks[tid]
+                if lanes > 0:
+                    edgeLabels[(self.problem.tracks[i]["s"], self.problem.tracks[i]["t"])] = "+" + str(lanes)
+                if lanes < 0:
+                    edgeLabels[(self.problem.tracks[i]["s"], self.problem.tracks[i]["t"])] = str(lanes)
         for s in self.newTracks:  # non-regular tracks
             for t in self.newTracks[s]:
-                for track in self.newTracks[s][t]:
-                    edgeLabels[(s, t)] = "New: (" + str(track["distance"]) + "m, " + str(
-                        track["maxspeed"]) + "km/h) x " + str(track["lanes"]) + "."
+                # dont show tracks from or to new nodes
+                if s not in nodosGraph and t not in nodosGraph:
+                    for track in self.newTracks[s][t]:
+                        edgeLabels[(s, t)] = "New: (" + str(track["distance"]) + "m, " + str(
+                            track["maxspeed"]) + "km/h) x " + str(track["lanes"]) + "."
 
         # nx.draw_networkx(graph, pos=nodePos,  arrows=True, arrowstyle='-|>', with_labels=False, node_size=0, edge_color=edgeColors)
         nx.draw(graph, pos=nodePos, arrows=True, arrowstyle='-|>', with_labels=False, node_size=0,

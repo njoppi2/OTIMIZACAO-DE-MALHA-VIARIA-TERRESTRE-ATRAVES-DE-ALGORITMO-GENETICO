@@ -274,7 +274,7 @@ class UMSalmanAlaswad_I(UserModel):
                     densSum += dens
                     densCount += 1
 
-        individual.fitness = densSum / densCount
+        individual.fitness = densCount * 100 / densSum
 
         return individual.fitness
 
