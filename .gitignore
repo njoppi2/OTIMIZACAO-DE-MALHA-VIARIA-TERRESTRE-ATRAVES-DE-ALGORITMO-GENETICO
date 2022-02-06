@@ -2,5 +2,6 @@
 *.net
 *.pdf
 *.png
+*.txt
 /cache
 /__pycache__

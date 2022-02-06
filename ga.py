@@ -5,15 +5,14 @@ from problem_definition import ProblemDefinition
 
 
 class GeneticAlgorithm:
-    def __init__(self, problem):
+    def __init__(self, problem, mut_rate):
         self.problem = problem
-        self.generationSize = 10
         self.offspringSise = 5
-        self.mutationRate = 0.001
+        self.mutationRate = mut_rate
 
     def mutationAddLane(self, ind, trackIds, chanceToStop=0.1):
 
-        metersThreshold = self.problem.budgetUpdate * 1000.0 - ind.regularInsertedKMeters * 1000.0  # threshold of change to be designed
+        metersThreshold = self.problem.budgetUpdate * 1000.0 - ind.getRegularInsertedKMeters() * 1000.0 - ind.getNewInsertedKMeters() * 1000 # threshold of change to be designed
         metersReached = 0  # meters chaged
 
         # select a random node
@@ -44,7 +43,7 @@ class GeneticAlgorithm:
 
     def mutationAddLaneOnRoad(self, ind, trackIds):
 
-        metersThreshold = self.problem.budgetUpdate * 1000.0 - ind.regularInsertedKMeters * 1000.0  # threshold of change to be designed
+        metersThreshold = self.problem.budgetUpdate * 1000.0 - ind.getRegularInsertedKMeters() * 1000.0 - ind.getNewInsertedKMeters() * 1000# threshold of change to be designed
         metersReached = 0  # meters chaged
 
         trackList = []
@@ -112,39 +111,49 @@ class GeneticAlgorithm:
         count = random.randint(1, 100)
 
         while count > 0:
-            # random selection of a track source
-            aleatoryTrackSource = str(random.randint(1, len(individual.tracks)))
+            # random selection of a node source
+            aleatoryNodeSource = str(random.randint(1, len(individual.problem.nodes)))
+            nodeSourceLong = individual.problem.nodes[aleatoryNodeSource]['long']
+            nodeSourceLat = individual.problem.nodes[aleatoryNodeSource]['lat']
 
-            # random selection of a track target
-            aleatoryTrackTarget = str(random.randint(1, len(individual.tracks)))
+            # random selection of a node target
+            aleatoryNodeTarget = str(random.randint(1, len(individual.problem.nodes)))
+            while aleatoryNodeSource == aleatoryNodeTarget:
+                aleatoryNodeTarget = str(random.randint(1, len(individual.problem.nodes)))
+            nodeTargetLong = individual.problem.nodes[aleatoryNodeTarget]['long']
+            nodeTargetLat = individual.problem.nodes[aleatoryNodeTarget]['lat']
 
             # random selection of a track id
             aleatoryTrackId = str(random.randint(1, 1000))
 
             # random number for the option
             randomNumber = random.randint(1, 3)
+
+            distance = individual.problem.haversine(nodeSourceLong, nodeSourceLat, nodeTargetLong, nodeTargetLat)
+
             if randomNumber == 1:
-                individual.insertAdditionalTrack(aleatoryTrackSource, aleatoryTrackTarget, 1500000, 1,
+                individual.insertAdditionalTrack(aleatoryNodeSource, aleatoryNodeTarget, distance, 1,
                                                  self.problem.maxSpeed)
             elif randomNumber == 2:
                 individual.setLaneValue(aleatoryTrackId, random.randint(1, 5))
             else:
-                individual.removeAdditionalTrack(aleatoryTrackSource, aleatoryTrackTarget, aleatoryTrackId)
+                individual.removeAdditionalTrack(aleatoryNodeSource, aleatoryNodeTarget, aleatoryTrackId)
             count -= 1
 
         return individual
 
-def run_genetic_algorithm(problem):
+def run_genetic_algorithm(problem, iteration, dirName, individuals, mut_rate, elite, mated_individuals, selection_technique):
     best_individual_history = []
-    total_fitness_sum_history = []
+    average_fitness_history = []
 
-    TOTAL_NUMBER_OF_INDIVIDUALS = 20
-    TOTAL_NUMBER_OF_GENERATIONS = 30
-    TOTAL_NUMBER_OF_ELITE_INDIVIDUALS = 2
-    TOTAL_NUMBER_OF_RANDOM_INDIVIDUALS = int(TOTAL_NUMBER_OF_INDIVIDUALS / 2)
-    TOTAL_NUMBER_OF_MATED_INDIVIDUALS = TOTAL_NUMBER_OF_INDIVIDUALS - TOTAL_NUMBER_OF_ELITE_INDIVIDUALS - TOTAL_NUMBER_OF_RANDOM_INDIVIDUALS
-    SELECTION_TECHNIQUE = "torneio"
-    ga = GeneticAlgorithm(problem)
+    TOTAL_NUMBER_OF_GENERATIONS = 15
+    TOTAL_NUMBER_OF_INDIVIDUALS = individuals
+    TOTAL_NUMBER_OF_ELITE_INDIVIDUALS = int(TOTAL_NUMBER_OF_INDIVIDUALS * elite)
+    TOTAL_NUMBER_OF_MATED_INDIVIDUALS = int(TOTAL_NUMBER_OF_INDIVIDUALS * mated_individuals)
+    TOTAL_NUMBER_OF_RANDOM_INDIVIDUALS = TOTAL_NUMBER_OF_INDIVIDUALS - TOTAL_NUMBER_OF_ELITE_INDIVIDUALS - TOTAL_NUMBER_OF_MATED_INDIVIDUALS
+    SELECTION_TECHNIQUE = selection_technique
+    
+    ga = GeneticAlgorithm(problem, mut_rate)
     fitness_list = []
     selected_parents = []
     total_fitness_sum = 0
@@ -231,8 +240,8 @@ def run_genetic_algorithm(problem):
         sorted_fitness_list = sorted(fitness_list, key=lambda d: d.fitness, reverse=True)
         best_individual = sorted_fitness_list[0]
 
-        total_fitness_sum_history.append(str(total_fitness_sum))
-        best_individual_history.append(str(best_individual.fitness) + "\t" + str(best_individual))
+        average_fitness_history.append("gen: " + str(gen + 1) + "\t\t\t" + "average fitness: " + str(round(total_fitness_sum / TOTAL_NUMBER_OF_INDIVIDUALS, 4)))
+        best_individual_history.append("gen: " + str(gen + 1) + "\t\t\t" + "best fitness: " + str(round(best_individual.fitness, 4)) + "\t" + str(best_individual))
 
 
         # selection / create selected_parents list
@@ -268,8 +277,23 @@ def run_genetic_algorithm(problem):
         total_fitness_sum = 0
         print("generation: " + str(gen))
 
-    print("\n\nTOTAL_FITNESS_SUM_HISTORY:\n\n"+"\n".join(total_fitness_sum_history))
+    print("\n\nAVERAGE_FITNESS_HISTORY:\n\n"+"\n".join(average_fitness_history))
     print("\n\nBEST_INDIVIDUAL_HISTORY:\n\n"+"\n".join(best_individual_history))
 
+    #trecho de código a ser utilizado durante os testes, deve ser removido após isso
 
-    best_individual.printDesign()
+    arquivo = open(dirName + '/arq' + str(iteration) + '.txt', 'w')
+    arquivo.write("\n\nPARAMETROS:\n\n")
+    arquivo.write("TOTAL_NUMBER_OF_INDIVIDUALS:\t\t\t" + str(TOTAL_NUMBER_OF_INDIVIDUALS) + "\n")
+    arquivo.write("TOTAL_NUMBER_OF_GENERATIONS:\t\t\t" + str(TOTAL_NUMBER_OF_GENERATIONS) + "\n")
+    arquivo.write("TOTAL_NUMBER_OF_ELITE_INDIVIDUALS:\t\t" + str(TOTAL_NUMBER_OF_ELITE_INDIVIDUALS) + "\n")
+    arquivo.write("TOTAL_NUMBER_OF_RANDOM_INDIVIDUALS:\t\t" + str(TOTAL_NUMBER_OF_RANDOM_INDIVIDUALS) + "\n")
+    arquivo.write("TOTAL_NUMBER_OF_MATED_INDIVIDUALS:\t\t" + str(TOTAL_NUMBER_OF_MATED_INDIVIDUALS) + "\n")
+    arquivo.write("SELECTION_TECHNIQUE:\t\t\t\t\t" + SELECTION_TECHNIQUE + "\n")
+    arquivo.write("MUTATION_RATE:\t\t\t\t\t\t\t" + str(ga.mutationRate * 100) + "%" + "\n")
+    
+    arquivo.write("\n\nAVERAGE_FITNESS_HISTORY:\n\n"+"\n".join(average_fitness_history))
+    arquivo.write("\n\nBEST_INDIVIDUAL_HISTORY:\n\n"+"\n".join(best_individual_history))
+    arquivo.close()
+
+    # best_individual.printDesign()

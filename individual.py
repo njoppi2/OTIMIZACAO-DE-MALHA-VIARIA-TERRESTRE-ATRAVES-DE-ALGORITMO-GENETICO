@@ -30,32 +30,13 @@ class Individual:
         for track in problem.tracks:
             self.tracks[track["id"]] = 0
 
-
-    #Funções gets faltantes
-
-    #return the vehicles by roads
-    def getVehiclesByRoad(self):
-        return self.vehiclesByRoad
-
     #return the Inserted Km in new tracks
     def getNewInsertedKMeters(self):
         return self.newInsertedKMeters
 
-    #return the number of the new tracks
-    def getNewTracksSize(self):
-        return len(self.newTracks)
-
-    #return the number of adapted tracks
-    def getTracksSize(self):
-        return len(self.tracks)
-
-    #return the next track id
-    def getNextTracksId(self):
-        return self.nextTracksId
-
-  # return the number of adaptation on a track
-    def getLaneValue(self, tid):
-        return self.tracks[tid]
+    #return the inserted km in regular tracks
+    def getRegularInsertedKMeters(self):
+        return self.regularInsertedKMeters
 
     # method for crossover
     def getModifications(self):
@@ -134,17 +115,20 @@ class Individual:
 
     # insert a new nonregular track between two nodes
     def insertAdditionalTrack(self, source, target, distance, lanes, maxspeed):
-        if source not in self.newTracks:
-            self.newTracks[source] = {}
-        if target not in self.newTracks[source]:
-            self.newTracks[source][target] = []
-        self.nextTracksId += 1
-        tt = (distance / 1000.0 * (1 / maxspeed)) / self.problem.minTT
-        self.newTracks[source][target].append(
-            {"id": "nt_" + str(self.nextTracksId), "s": source, "t": target, "distance": distance, "lanes": lanes,
-             "maxspeed": maxspeed, "tt": tt})
-        self.newInsertedKMeters += lanes * distance / 1000.0
-        self.resetFitness()
+        metersThreshold = self.problem.budgetUpdate * 1000.0 - self.getRegularInsertedKMeters() * 1000.0 - self.getNewInsertedKMeters() * 1000 # threshold of change to be designed
+
+        if metersThreshold >= distance:
+            if source not in self.newTracks:
+                self.newTracks[source] = {}
+            if target not in self.newTracks[source]:
+                self.newTracks[source][target] = []
+            self.nextTracksId += 1
+            tt = (distance / 1000.0 * (1 / maxspeed)) / self.problem.minTT
+            self.newTracks[source][target].append(
+                {"id": "nt_" + str(self.nextTracksId), "s": source, "t": target, "distance": distance, "lanes": lanes,
+                 "maxspeed": maxspeed, "tt": tt})
+            self.newInsertedKMeters += lanes * distance / 1000.0
+            self.resetFitness()
 
     # remove a new nonregular track between two nodes
     def removeAdditionalTrack(self, source, target, tid):
@@ -253,7 +237,7 @@ class Individual:
                 # dont show tracks from or to new nodes
                 if s not in nodosGraph and t not in nodosGraph:
                     for track in self.newTracks[s][t]:
-                        edgeLabels[(s, t)] = "New: (" + str(track["distance"]) + "m, " + str(
+                        edgeLabels[(s, t)] = "New: (" + str(round(track["distance"]/1000, 2)) + "km, " + str(
                             track["maxspeed"]) + "km/h) x " + str(track["lanes"]) + "."
 
         # nx.draw_networkx(graph, pos=nodePos,  arrows=True, arrowstyle='-|>', with_labels=False, node_size=0, edge_color=edgeColors)
