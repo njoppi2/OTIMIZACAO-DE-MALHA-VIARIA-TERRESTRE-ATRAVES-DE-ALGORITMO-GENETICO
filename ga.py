@@ -146,12 +146,13 @@ def run_genetic_algorithm(problem, iteration, dirName, individuals, mut_rate, el
     best_individual_history = []
     average_fitness_history = []
 
-    TOTAL_NUMBER_OF_GENERATIONS = 15
+    TOTAL_NUMBER_OF_GENERATIONS = 50
     TOTAL_NUMBER_OF_INDIVIDUALS = individuals
     TOTAL_NUMBER_OF_ELITE_INDIVIDUALS = int(TOTAL_NUMBER_OF_INDIVIDUALS * elite)
     TOTAL_NUMBER_OF_MATED_INDIVIDUALS = int(TOTAL_NUMBER_OF_INDIVIDUALS * mated_individuals)
     TOTAL_NUMBER_OF_RANDOM_INDIVIDUALS = TOTAL_NUMBER_OF_INDIVIDUALS - TOTAL_NUMBER_OF_ELITE_INDIVIDUALS - TOTAL_NUMBER_OF_MATED_INDIVIDUALS
     SELECTION_TECHNIQUE = selection_technique
+    RANDOM_INDIVIDUAL_TECHNIQUE = "current population"
     
     ga = GeneticAlgorithm(problem, mut_rate)
     fitness_list = []
@@ -266,10 +267,15 @@ def run_genetic_algorithm(problem, iteration, dirName, individuals, mut_rate, el
         for i in range(TOTAL_NUMBER_OF_ELITE_INDIVIDUALS):
             new_generation_individuals.append(sorted_fitness_list[i])
 
+        if RANDOM_INDIVIDUAL_TECHNIQUE == "new population":
+            # add random_individuals to generation_individuals
+            new_generation_individuals.extend(ga.createInitialPopulation(TOTAL_NUMBER_OF_RANDOM_INDIVIDUALS))
+        elif RANDOM_INDIVIDUAL_TECHNIQUE == "current population":
+            non_elitist_individuals = current_generation_individuals[TOTAL_NUMBER_OF_ELITE_INDIVIDUALS:]
+            chosen_individuals = random.choices(non_elitist_individuals, k=TOTAL_NUMBER_OF_RANDOM_INDIVIDUALS)
+            new_generation_individuals.extend(chosen_individuals)
 
-        # add random_individuals to generation_individuals
-        new_generation_individuals.extend(ga.createInitialPopulation(TOTAL_NUMBER_OF_RANDOM_INDIVIDUALS))
-
+            
         #updates the current_population
         current_generation_individuals = new_generation_individuals
         new_generation_individuals = []

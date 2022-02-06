@@ -31,6 +31,6 @@ for individuals in TOTAL_NUMBER_OF_INDIVIDUALS_LIST:
                         "mated_individuals": mated_individuals,
                         "selection_technique": selection_technique
                     }
-                    for iteration in range(1):
+                    for iteration in range(10):
                         run_genetic_algorithm(problem, iteration + 1, dirName, **parameters)
 
