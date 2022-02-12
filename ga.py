@@ -281,10 +281,6 @@ def run_genetic_algorithm(problem, iteration, dirName, individuals, mut_rate, el
         new_generation_individuals = []
         fitness_list = []
         total_fitness_sum = 0
-        print("generation: " + str(gen))
-
-    print("\n\nAVERAGE_FITNESS_HISTORY:\n\n"+"\n".join(average_fitness_history))
-    print("\n\nBEST_INDIVIDUAL_HISTORY:\n\n"+"\n".join(best_individual_history))
 
     #trecho de código a ser utilizado durante os testes, deve ser removido após isso
 
@@ -301,5 +297,9 @@ def run_genetic_algorithm(problem, iteration, dirName, individuals, mut_rate, el
     arquivo.write("\n\nAVERAGE_FITNESS_HISTORY:\n\n"+"\n".join(average_fitness_history))
     arquivo.write("\n\nBEST_INDIVIDUAL_HISTORY:\n\n"+"\n".join(best_individual_history))
     arquivo.close()
+
+    print(dirName + " created")
+
+    return best_individual
 
     # best_individual.printDesign()

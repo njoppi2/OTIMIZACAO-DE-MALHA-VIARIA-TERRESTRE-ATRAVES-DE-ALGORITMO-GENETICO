@@ -21,6 +21,7 @@ for individuals in TOTAL_NUMBER_OF_INDIVIDUALS_LIST:
             for mated_individuals in TOTAL_NUMBER_OF_MATED_INDIVIDUALS_LIST:
                 for selection_technique in SELECTION_TECHNIQUES_LIST:
                     dirName = "ind-"+str(individuals) + "-mut-"+str(mut_rate) + "-elite-"+str(elite) + "-mated-" + str(mated_individuals) + "-sel-" + str(selection_technique)
+                    best_individual_per_file = []
                     if not os.path.isdir(dirName):
                         os.mkdir(dirName)
                     
@@ -32,5 +33,12 @@ for individuals in TOTAL_NUMBER_OF_INDIVIDUALS_LIST:
                         "selection_technique": selection_technique
                     }
                     for iteration in range(10):
-                        run_genetic_algorithm(problem, iteration + 1, dirName, **parameters)
+                        best_individual = run_genetic_algorithm(problem, iteration + 1, dirName, **parameters)
+                        best_individual_per_file.append(best_individual)
+
+                    #create PNG for best individual in folder
+
+                    best_folder_individual = max(best_individual_per_file, key=lambda k: k.fitness)
+                    best_folder_individual.printDesign(dirName)
+
 

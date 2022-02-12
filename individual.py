@@ -246,7 +246,10 @@ class Individual:
         nx.draw_networkx_edge_labels(graph, pos=nodePos, edge_labels=edgeLabels, font_color='black')
         if outputFormat != None:
             pyplot.savefig(outputFilename + "." + str(outputFormat), format=outputFormat)
-        # pyplot.savefig(outputFilename+".png", format="PNG")
+
+        pyplot.savefig(outputFilename+"/best_individual.png", format="PNG")
         # pyplot.savefig(outputFilename+".pdf", format="PDF")
-        pyplot.show()
+        # pyplot.show()
+
+        pyplot.clf()
 

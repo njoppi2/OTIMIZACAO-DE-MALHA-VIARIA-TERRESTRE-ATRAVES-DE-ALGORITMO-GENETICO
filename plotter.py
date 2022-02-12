@@ -1,3 +1,5 @@
+import os
+import shutil
 import numpy as np
 import re
 import matplotlib.pyplot as plt
@@ -7,6 +9,7 @@ MUTATION_RATE = [0.01, 0.1]
 TOTAL_NUMBER_OF_ELITE_INDIVIDUALS_LIST = [0.1, 0.2]
 TOTAL_NUMBER_OF_MATED_INDIVIDUALS_LIST = [0.25, 0.5]
 SELECTION_TECHNIQUES_LIST = ["torneio", "roleta", "aleatorio"]
+analysis_folder = "analysis"
 #average_fitness
 average_fitness_dict = {}
 all_absolute_averages = []
@@ -103,11 +106,17 @@ for i in range(10):
     values = sorted_all_best_folder_ind[i]["individuals"]
     plt.plot(values, label = label)
 
-#create table of best individuals
-    arquivo = open('ind_table.txt', 'w')
-    
-    arquivo.write("\n\nRANKING DE MELHORES INDIVÍDUOS:\n\n")
-    for index, individual in enumerate(sorted_all_best_folder_ind):
-        arquivo.write("Colocação: " + str(index + 1) + "º\t\t" "Conjunto de parâmetros: \t" + "{:<50}".format(str(individual["dirname"])) + "  \tFitness: \t" + str(individual["max_value_in_folder"]) + "\n")
-
 plot_graph()
+
+
+#create table of best individuals
+if not os.path.isdir(analysis_folder):
+    os.mkdir(analysis_folder)
+    
+arquivo = open(analysis_folder + '/ind_table.txt', 'w')
+
+arquivo.write("\n\nRANKING DE MELHORES INDIVÍDUOS:\n\n")
+for index, individual in enumerate(sorted_all_best_folder_ind):
+    arquivo.write("Colocação: " + str(index + 1) + "º\t\t" "Conjunto de parâmetros: \t" + "{:<50}".format(str(individual["dirname"])) + "  \tFitness: \t" + str(individual["max_value_in_folder"]) + "\n")
+    shutil.copy2( individual["dirname"]+'/best_individual.png', analysis_folder + "/" + str(index + 1) + 'individual-' + individual["dirname"] + '.png')
+
