@@ -75,13 +75,13 @@ for individuals in TOTAL_NUMBER_OF_INDIVIDUALS_LIST:
                         "individuals": folder_invididuals[best_file_number]
                     })
 
-def plot_graph():
+def plot_graph(title):
     # naming the x axis
-    plt.xlabel('x - axis')
+    plt.xlabel('geração')
     # naming the y axis
-    plt.ylabel('y - axis')
+    plt.ylabel('fitness')
     # giving a title to my graph
-    plt.title('Two lines on same graph!')
+    plt.title(title)
     
     # show a legend on the plot
     plt.legend()
@@ -96,7 +96,7 @@ for i in range(10):
     position_i = average_fitness_dict[sorted_all_absolute_averages[i]["dirname"]]
     plt.plot(position_i, label = sorted_all_absolute_averages[i]["dirname"])
 
-plot_graph()
+plot_graph("Fitness médio por geração")
 
 
 sorted_all_best_folder_ind = sorted(all_best_folder_ind, key=lambda k: k["max_value_in_folder"], reverse=True)
@@ -106,7 +106,7 @@ for i in range(10):
     values = sorted_all_best_folder_ind[i]["individuals"]
     plt.plot(values, label = label)
 
-plot_graph()
+plot_graph("Indivíduo com maior fitness")
 
 
 #create table of best individuals
