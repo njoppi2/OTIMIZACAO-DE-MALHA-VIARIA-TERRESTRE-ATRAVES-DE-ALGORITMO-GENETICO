@@ -7,11 +7,17 @@ class ProblemDefinition:
 
     def __init__(self, inputFile):
 
+        # max speed
         self.maxSpeed = 50  # in km/h
+        # every intersection between 2+ roads
         self.nodes = None
+        # segment of roads, with different maxSpeed, lanes, etc..
         self.tracks = None
+        # a dict of all nodes, each containing a list of their targets
         self.adjLst = None
+        # a dict of all nodes, each containing a list of nodes that target them
         self.adjLstInv = None
+        # minimal travel time
         self.minTT = None
         self.budgetUpdate = 10  # in km
         self.budgetAddition = 10  # in km

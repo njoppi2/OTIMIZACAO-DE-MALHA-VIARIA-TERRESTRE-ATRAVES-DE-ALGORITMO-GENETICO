@@ -90,6 +90,8 @@ def plot_graph(title):
     plt.show()
     plt.clf()
 
+
+#print average
 sorted_all_absolute_averages = sorted(all_absolute_averages, key=lambda k: k["folder_absolute_average"], reverse=True) 
 
 for i in range(10):
@@ -98,7 +100,7 @@ for i in range(10):
 
 plot_graph("Fitness médio por geração")
 
-
+#print best individuals
 sorted_all_best_folder_ind = sorted(all_best_folder_ind, key=lambda k: k["max_value_in_folder"], reverse=True)
 
 for i in range(10):

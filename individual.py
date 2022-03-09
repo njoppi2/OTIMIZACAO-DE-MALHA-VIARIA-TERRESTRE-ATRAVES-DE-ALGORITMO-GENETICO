@@ -150,7 +150,7 @@ class Individual:
 
         return True
 
-    def printDesign(self, outputFilename="output", outputFormat=None):
+    def printDesign(self, dirName=None, outputFormat=None, plot=False):
         edgeColors = []
         for track in self.problem.tracks:  # regular tracks
             if (track["lanes"] + self.tracks[track["id"]]) == 0: continue
@@ -245,11 +245,14 @@ class Individual:
                 edge_color=edgeColors)
         nx.draw_networkx_edge_labels(graph, pos=nodePos, edge_labels=edgeLabels, font_color='black')
         if outputFormat != None:
-            pyplot.savefig(outputFilename + "." + str(outputFormat), format=outputFormat)
+            pyplot.savefig(dirName + "." + str(outputFormat), format=outputFormat)
 
-        pyplot.savefig(outputFilename+"/best_individual.png", format="PNG")
-        # pyplot.savefig(outputFilename+".pdf", format="PDF")
-        # pyplot.show()
+        if dirName:
+            pyplot.savefig(dirName+"/best_individual.png", format="PNG")
+            # pyplot.savefig(outputFilename+".pdf", format="PDF")
+
+        if plot:
+            pyplot.show()
 
         pyplot.clf()
 

@@ -3,6 +3,7 @@ import networkx as nx
 import copy
 import matplotlib.pyplot as plt
 import utm
+from utils import place_name
 
 from math import radians, cos, sin, asin, sqrt
 
@@ -23,7 +24,6 @@ def haversine(lon1, lat1, lon2, lat2):
     km = 6371* c
     return km * 1000.0
 
-place_name =  "Borá, Brazil"
 inputFile = place_name+'.net'
 
 nodes = {}
@@ -241,8 +241,8 @@ for i in range(len(roads)):
         
 
 
-print(maxId)
-print(maxDensity)
+# print(maxId)
+# print(maxDensity)
 
 edgeColors = []
 for road in roads:
