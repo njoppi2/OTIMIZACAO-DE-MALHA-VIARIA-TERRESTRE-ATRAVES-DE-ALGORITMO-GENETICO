@@ -123,10 +123,11 @@ class Individual:
             if target not in self.newTracks[source]:
                 self.newTracks[source][target] = []
             self.nextTracksId += 1
-            tt = (distance / 1000.0 * (1 / maxspeed)) / self.problem.minTT
+            tt = distance / 1000.0 * (1 / maxspeed)
+            normalized_tt = self.problem.normalize_tt(tt)
             self.newTracks[source][target].append(
                 {"id": "nt_" + str(self.nextTracksId), "s": source, "t": target, "distance": distance, "lanes": lanes,
-                 "maxspeed": maxspeed, "tt": tt})
+                 "maxspeed": maxspeed, "normalized_tt": normalized_tt, "tt": tt})
             self.newInsertedKMeters += lanes * distance / 1000.0
             self.resetFitness()
 

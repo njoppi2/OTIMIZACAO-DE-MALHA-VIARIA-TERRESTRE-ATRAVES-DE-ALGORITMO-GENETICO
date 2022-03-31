@@ -6,13 +6,13 @@ from problem_definition import ProblemDefinition
 from utils import place_name
 import os
 
-def run_genetic_algorithm(problem, iteration, dirName, n_ind = 20, mut_rate = 0.1, elite_ind = 0.1, mated_ind = 0.25, selection_technique = "torneio"):
+def run_genetic_algorithm(problem, iteration, dirName, n_ind = 20, n_gen = 50, mut_rate = 0.1, elite_ind = 0.1, mated_ind = 0.25, selection_technique = "torneio"):
     # timeA = time.time()
     
     best_individual_history = []
     average_fitness_history = []
 
-    TOTAL_NUMBER_OF_GENERATIONS = 50
+    TOTAL_NUMBER_OF_GENERATIONS = n_gen
     TOTAL_NUMBER_OF_INDIVIDUALS = n_ind
     TOTAL_NUMBER_OF_ELITE_INDIVIDUALS = int(TOTAL_NUMBER_OF_INDIVIDUALS * elite_ind)
     TOTAL_NUMBER_OF_MATED_INDIVIDUALS = int(TOTAL_NUMBER_OF_INDIVIDUALS * mated_ind)
@@ -175,17 +175,21 @@ def run_genetic_algorithm(problem, iteration, dirName, n_ind = 20, mut_rate = 0.
 
 
 
-random.seed(0)
+random.seed()
 file_name = create_net_file_from(place_name)
 problem = ProblemDefinition(file_name)
 
+original_ind = Individual(problem)
+original_ind.calculateFitness()
+print("problem fitness: ", original_ind.fitness)
 
 TOTAL_NUMBER_OF_INDIVIDUALS_LIST = [20]
 MUTATION_RATE = [0.1]
 TOTAL_NUMBER_OF_ELITE_INDIVIDUALS_LIST = [0.1]
 TOTAL_NUMBER_OF_MATED_INDIVIDUALS_LIST = [0.25]
-SELECTION_TECHNIQUES_LIST = ["roleta"]
+SELECTION_TECHNIQUES_LIST = ["torneio"]
 ITERATIONS_FROM_SAME_PARAMETERS = 1
+NUMBER_OF_GENERATIONS = 50
 
 for n_ind in TOTAL_NUMBER_OF_INDIVIDUALS_LIST:
     for mut_rate in MUTATION_RATE:
@@ -199,6 +203,7 @@ for n_ind in TOTAL_NUMBER_OF_INDIVIDUALS_LIST:
                     
                     parameters = {
                         "n_ind": n_ind,
+                        "n_gen": NUMBER_OF_GENERATIONS,
                         "mut_rate": mut_rate,
                         "elite_ind": elite_ind,
                         "mated_ind": mated_ind,

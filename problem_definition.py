@@ -1,5 +1,9 @@
 import copy
+from functools import reduce
 from math import radians, cos, sin, asin, sqrt
+from matplotlib import pyplot as plt
+import numpy as np
+
 
 
 # reads the .net file from load_place.py and turns it into a graph
@@ -21,6 +25,7 @@ class ProblemDefinition:
         self.minTT = None
         self.budgetUpdate = 10  # in km
         self.budgetAddition = 10  # in km
+        self.valueAt50percent = None
 
         self.nodes = {}
         self.tracks = []
@@ -111,40 +116,72 @@ class ProblemDefinition:
 
         # adjacent list
         self.adjLst = {}
-        for road in self.tracks:
-            s = road["s"]
-            t = road["t"]
+        for track in self.tracks:
+            s = track["s"]
+            t = track["t"]
             if s not in self.adjLst:
                 self.adjLst[s] = {}
             if t not in self.adjLst[s]:
                 self.adjLst[s][t] = []
-            self.adjLst[s][t].append(road)
+            self.adjLst[s][t].append(track)
 
         # adjacent list inverted
         self.adjLstInv = {}
-        for road in self.tracks:
-            s = road["s"]
-            t = road["t"]
+        for track in self.tracks:
+            s = track["s"]
+            t = track["t"]
             if t not in self.adjLstInv:
                 self.adjLstInv[t] = {}
             if s not in self.adjLstInv[t]:
                 self.adjLstInv[t][s] = []
-            self.adjLstInv[t][s].append(road)
+            self.adjLstInv[t][s].append(track)
 
         # normalizing travel time (tt_i)
         self.minTT = float("+inf")
-        for road in self.tracks:
-            speed = self.maxSpeed  # kmh
-            if "maxspeed" in road:
-                speed = road["maxspeed"]
-            if self.minTT > road["distance"]:
-                self.minTT = road["distance"] / 1000.0 * (1 / speed)
-        for i in range(len(self.tracks)):
-            road = self.tracks[i]
-            speed = self.maxSpeed  # kmh
-            if "maxspeed" in road:
-                speed = road["maxspeed"]
-            self.tracks[i]["tt"] = (self.tracks[i]["distance"] / 1000.0 * (1 / speed)) / self.minTT
+        tt_list = []
+        for track in self.tracks:
+            if "maxspeed" in track:
+                speed = track["maxspeed"]
+            else:
+                speed = self.maxSpeed  # kmh
+
+            track["tt"] = track["distance"] / 1000.0 * (1 / speed)
+
+            if self.minTT > track["tt"]:
+                self.minTT = track["tt"]
+                
+        # for track in self.tracks:
+        #     # normalized in this case means its value is between 1 and infite
+        #     track["normalized_tt"] = (track["tt"]) / self.minTT
+
+            tt_list.append(track["tt"])
+        tt_list.sort(reverse=True)
+        current_sum = 0
+        total_sum = sum(tt_list)
+        index_middle_of_area = 0
+        for i in range(len(tt_list)):
+            tt = tt_list[i]
+            if current_sum < total_sum / 2:
+                current_sum += tt
+            else:
+                index_middle_of_area = i
+                break
+
+        self.valueAt50percent = tt_list[index_middle_of_area]
+        # percentage = list(map(lambda x: 1 - pow(2, -x / valueAt50percent), tt_list))
+        # current_distribuition = sorted(list(map(lambda x: (x['tt'] - 1) / x['tt'], self.tracks)), reverse=True)
+        # plt.margins(x=0.003, y=0.001)
+        # plt.plot(percentage)
+        # plt.show()
+
+
+
+        for track in self.tracks:
+            # normalized_tt is a value between 0 and 1
+            track["normalized_tt"] = self.normalize_tt(track["tt"])
+
+    def normalize_tt(self, tt):
+        return 1 - pow(2, -tt / self.valueAt50percent)
 
     def haversine(self, lon1, lat1, lon2, lat2):
         """
