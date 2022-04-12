@@ -3,12 +3,13 @@ from individual import Individual
 from load_place import create_net_file_from
 from ga import GeneticAlgorithm
 from problem_definition import ProblemDefinition
+from user_model import UMSalmanAlaswad_I
 from utils import place_name
 import os
 
-def run_genetic_algorithm(problem, iteration, dirName, n_ind = 20, n_gen = 50, mut_rate = 0.1, elite_ind = 0.1, mated_ind = 0.25, selection_technique = "torneio"):
+def run_genetic_algorithm(user_model, iteration, dirName, n_ind = 20, n_gen = 50, mut_rate = 0.1, elite_ind = 0.1, mated_ind = 0.25, selection_technique = "torneio"):
     # timeA = time.time()
-    
+    problem = user_model.problem
     best_individual_history = []
     average_fitness_history = []
 
@@ -20,7 +21,7 @@ def run_genetic_algorithm(problem, iteration, dirName, n_ind = 20, n_gen = 50, m
     SELECTION_TECHNIQUE = selection_technique
     RANDOM_INDIVIDUAL_TECHNIQUE = "new population"
     
-    ga = GeneticAlgorithm(problem, mut_rate)
+    ga = GeneticAlgorithm(user_model, mut_rate)
     fitness_list = []
     selected_parents = []
     total_fitness_sum = 0
@@ -35,7 +36,7 @@ def run_genetic_algorithm(problem, iteration, dirName, n_ind = 20, n_gen = 50, m
         fatherModifications = father.getRandomModifications()
         motherModifications = mother.getRandomModifications()
 
-        child = Individual(problem)
+        child = Individual(user_model)
         child.setModifications(fatherModifications, motherModifications)
         mutation(child)
 
@@ -175,21 +176,22 @@ def run_genetic_algorithm(problem, iteration, dirName, n_ind = 20, n_gen = 50, m
 
 
 
-random.seed()
+random.seed(0)
 file_name = create_net_file_from(place_name)
 problem = ProblemDefinition(file_name)
+salmanAlaswad_model = UMSalmanAlaswad_I(problem)
 
-original_ind = Individual(problem)
+original_ind = Individual(salmanAlaswad_model)
 original_ind.calculateFitness()
 print("problem fitness: ", original_ind.fitness)
 
-TOTAL_NUMBER_OF_INDIVIDUALS_LIST = [20]
+TOTAL_NUMBER_OF_INDIVIDUALS_LIST = [20,]
 MUTATION_RATE = [0.1]
 TOTAL_NUMBER_OF_ELITE_INDIVIDUALS_LIST = [0.1]
 TOTAL_NUMBER_OF_MATED_INDIVIDUALS_LIST = [0.25]
 SELECTION_TECHNIQUES_LIST = ["torneio"]
+NUMBER_OF_GENERATIONS = 10
 ITERATIONS_FROM_SAME_PARAMETERS = 1
-NUMBER_OF_GENERATIONS = 50
 
 for n_ind in TOTAL_NUMBER_OF_INDIVIDUALS_LIST:
     for mut_rate in MUTATION_RATE:
@@ -210,7 +212,7 @@ for n_ind in TOTAL_NUMBER_OF_INDIVIDUALS_LIST:
                         "selection_technique": selection_technique
                     }
                     for iteration in range(ITERATIONS_FROM_SAME_PARAMETERS):
-                        best_ind = run_genetic_algorithm(problem, iteration + 1, dirName, **parameters)
+                        best_ind = run_genetic_algorithm(salmanAlaswad_model, iteration + 1, dirName, **parameters)
                         best_ind_per_file.append(best_ind)
 
                     #create PNG for best individual in folder

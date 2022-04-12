@@ -174,8 +174,6 @@ class ProblemDefinition:
         # plt.plot(percentage)
         # plt.show()
 
-
-
         for track in self.tracks:
             # normalized_tt is a value between 0 and 1
             track["normalized_tt"] = self.normalize_tt(track["tt"])

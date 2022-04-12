@@ -1,5 +1,5 @@
+from copy import deepcopy
 import osmnx as ox
-from user_model import UMSalmanAlaswad_I
 import random
 import networkx as nx
 import matplotlib.pyplot as pyplot
@@ -8,16 +8,18 @@ import utm
 #reads the problem (a city graph) and creates new attributes/functions useful for a genetic algorithm
 class Individual:
 
-    def __init__(self, problem):
+    def __init__(self, user_model):
+        problem = user_model.problem
+        self.pMatrix = deepcopy(user_model.pMatrix)
 
-        self.userModel = UMSalmanAlaswad_I(problem)
+        self.userModel = user_model
         self.problem = problem
         self.fitness = None
         self.vehiclesByRoad = None
         # variable ↓ for crossover
         # for the tracks with new number of lanes
         self.newLanes = {}
-        self.tracks = {}  # positive or negative number of adapted lanes
+        self.tracks_lanes_modifications = {}  # positive or negative number of adapted lanes
         self.newTracks = {}
         # for preexisting tracks
         self.regularInsertedKMeters = 0
@@ -26,9 +28,13 @@ class Individual:
         self.newInsertedKMeters = 0
         # id for new tracks
         self.nextTracksId = 0
+        # string that'll be contained in every newTrack's id
+        self.newTracksIdentifier = "nt_"
+        # list with all regular tracks that have any modifications (ex: lanes)
+        self.modifiedTracks = []
         # no influences on the number of lanes for each track
         for track in problem.tracks:
-            self.tracks[track["id"]] = 0
+            self.tracks_lanes_modifications[track["id"]] = 0
 
     #return the Inserted Km in new tracks
     def getNewInsertedKMeters(self):
@@ -92,17 +98,19 @@ class Individual:
     # set the number of lanes adapted in a track
     def setLaneValue(self, tid, newNoLanes):
         i = int(tid)
-        if self.tracks[tid] > 0:
-            self.regularInsertedKMeters -= self.tracks[tid] * self.problem.tracks[i]["distance"] / 1000.0
-        if self.tracks[tid] < 0:
-            self.regularRemovedKMeters -= self.tracks[tid] * self.problem.tracks[i]["distance"] / 1000.0
-        self.tracks[tid] = newNoLanes
+        track = self.problem.tracks[i]
+        if self.tracks_lanes_modifications[tid] > 0:
+            self.regularInsertedKMeters -= self.tracks_lanes_modifications[tid] * track["distance"] / 1000.0
+        if self.tracks_lanes_modifications[tid] < 0:
+            self.regularRemovedKMeters -= self.tracks_lanes_modifications[tid] * track["distance"] / 1000.0
+        self.tracks_lanes_modifications[tid] = newNoLanes
         self.newLanes[tid] = newNoLanes
         if newNoLanes > 0:
-            self.regularInsertedKMeters += newNoLanes * self.problem.tracks[i]["distance"] / 1000.0
+            self.regularInsertedKMeters += newNoLanes * track["distance"] / 1000.0
         if newNoLanes < 0:
-            self.regularRemovedKMeters += newNoLanes * self.problem.tracks[i]["distance"] / 1000.0
+            self.regularRemovedKMeters += newNoLanes * track["distance"] / 1000.0
 
+        self.modifiedTracks.append(track)
         self.resetFitness()
 
     #return the fitness metric
@@ -116,19 +124,21 @@ class Individual:
     # insert a new nonregular track between two nodes
     def insertAdditionalTrack(self, source, target, distance, lanes, maxspeed):
         metersThreshold = self.problem.budgetUpdate * 1000.0 - self.getRegularInsertedKMeters() * 1000.0 - self.getNewInsertedKMeters() * 1000 # threshold of change to be designed
+        self.nextTracksId += 1
+        new_track_id = self.newTracksIdentifier + str(self.nextTracksId)
 
         if metersThreshold >= distance:
             if source not in self.newTracks:
                 self.newTracks[source] = {}
             if target not in self.newTracks[source]:
                 self.newTracks[source][target] = []
-            self.nextTracksId += 1
             tt = distance / 1000.0 * (1 / maxspeed)
             normalized_tt = self.problem.normalize_tt(tt)
             self.newTracks[source][target].append(
-                {"id": "nt_" + str(self.nextTracksId), "s": source, "t": target, "distance": distance, "lanes": lanes,
+                {"id": new_track_id, "s": source, "t": target, "distance": distance, "lanes": lanes,
                  "maxspeed": maxspeed, "normalized_tt": normalized_tt, "tt": tt})
             self.newInsertedKMeters += lanes * distance / 1000.0
+            self.tracks_lanes_modifications[new_track_id] = 0
             self.resetFitness()
 
     # remove a new nonregular track between two nodes
@@ -154,19 +164,19 @@ class Individual:
     def printDesign(self, dirName=None, outputFormat=None, plot=False):
         edgeColors = []
         for track in self.problem.tracks:  # regular tracks
-            if (track["lanes"] + self.tracks[track["id"]]) == 0: continue
+            if (track["lanes"] + self.tracks_lanes_modifications[track["id"]]) == 0: continue
             color = ""
             if self.vehiclesByRoad[track["id"]] <= 7 * (track["distance"] / 1000.0) * (
-                    track["lanes"] + self.tracks[track["id"]]):
+                    track["lanes"] + self.tracks_lanes_modifications[track["id"]]):
                 color = "green"
             elif self.vehiclesByRoad[track["id"]] <= 11 * (track["distance"] / 1000.0) * (
-                    track["lanes"] + self.tracks[track["id"]]):
+                    track["lanes"] + self.tracks_lanes_modifications[track["id"]]):
                 color = "yellow"
             elif self.vehiclesByRoad[track["id"]] <= 22 * (track["distance"] / 1000.0) * (
-                    track["lanes"] + self.tracks[track["id"]]):
+                    track["lanes"] + self.tracks_lanes_modifications[track["id"]]):
                 color = "orange"
             elif self.vehiclesByRoad[track["id"]] <= 28 * (track["distance"] / 1000.0) * (
-                    track["lanes"] + self.tracks[track["id"]]):
+                    track["lanes"] + self.tracks_lanes_modifications[track["id"]]):
                 color = "purple"
             else:
                 color = "red"
@@ -197,7 +207,7 @@ class Individual:
 
         # arcs
         for track in self.problem.tracks:  # regular tracks
-            if (track["lanes"] + self.tracks[track["id"]]) == 0: continue
+            if (track["lanes"] + self.tracks_lanes_modifications[track["id"]]) == 0: continue
             graph.add_edge(track["s"], track["t"])
         for s in self.newTracks:  # non-regular tracks
             for t in self.newTracks[s]:
@@ -224,15 +234,16 @@ class Individual:
 
         # labeling arcs
         edgeLabels = {}
-        for tid in self.tracks:  # regular
-            i = int(tid)
-            # don't show labels from new nodes
-            if i not in nodosGraph:
-                lanes = self.tracks[tid]
-                if lanes > 0:
-                    edgeLabels[(self.problem.tracks[i]["s"], self.problem.tracks[i]["t"])] = "+" + str(lanes)
-                if lanes < 0:
-                    edgeLabels[(self.problem.tracks[i]["s"], self.problem.tracks[i]["t"])] = str(lanes)
+        for tid in self.tracks_lanes_modifications:  # regular
+            if self.newTracksIdentifier not in tid: # if is not new_track
+                i = int(tid)
+                # don't show labels from new nodes
+                if i not in nodosGraph:
+                    lanes = self.tracks_lanes_modifications[tid]
+                    if lanes > 0:
+                        edgeLabels[(self.problem.tracks[i]["s"], self.problem.tracks[i]["t"])] = "+" + str(lanes)
+                    if lanes < 0:
+                        edgeLabels[(self.problem.tracks[i]["s"], self.problem.tracks[i]["t"])] = str(lanes)
         for s in self.newTracks:  # non-regular tracks
             for t in self.newTracks[s]:
                 # dont show tracks from or to new nodes

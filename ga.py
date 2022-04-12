@@ -1,12 +1,11 @@
 import random
 from individual import Individual
 
-from problem_definition import ProblemDefinition
-
 
 class GeneticAlgorithm:
-    def __init__(self, problem, mut_rate):
-        self.problem = problem
+    def __init__(self, user_model, mut_rate):
+        self.user_model = user_model
+        self.problem = user_model.problem
         self.offspringSise = 5
         self.mutationRate = mut_rate
 
@@ -105,7 +104,7 @@ class GeneticAlgorithm:
 
     def createNewRadomIndividual(self):
         # create the individual
-        individual = Individual(self.problem)
+        individual = Individual(self.user_model)
 
         # number of the iterations
         count = random.randint(1, 100)
