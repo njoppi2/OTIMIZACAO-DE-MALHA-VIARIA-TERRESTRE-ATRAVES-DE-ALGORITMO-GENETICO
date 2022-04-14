@@ -179,11 +179,11 @@ class UMSalmanAlaswad_I(UserModel):
         #66.0
         for track in self.problem.tracks:  # number of vehicles for regular tracks
             self.calculate_vehicles_number(individual, track, useModificationsAndNewTracks = True)
-        a = copy.deepcopy(individual.vehiclesByRoad)
+        # a = copy.deepcopy(individual.vehiclesByRoad)
         # for track in self.problem.tracks:  # number of vehicles for regular tracks
         #     self.calculate_vehicles_number(individual, track, useModificationsAndNewTracks = True)
 
-        b = copy.deepcopy(individual.vehiclesByRoad)
+        # b = copy.deepcopy(individual.vehiclesByRoad)
 
         # for track in individual.modifiedTracks:
         #     self.calculate_vehicles_number(individual, track, useModificationsAndNewTracks = True)

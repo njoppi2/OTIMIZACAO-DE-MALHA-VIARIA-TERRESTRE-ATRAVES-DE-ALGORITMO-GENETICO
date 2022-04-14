@@ -1,4 +1,5 @@
 import random
+from time import time
 from individual import Individual
 from load_place import create_net_file_from
 from ga import GeneticAlgorithm
@@ -63,7 +64,10 @@ def run_genetic_algorithm(user_model, iteration, dirName, n_ind = 20, n_gen = 50
 
     def draw_individual(selection_technique):
         if selection_technique == "roleta":
-            random_number = random.randint(0, int(total_fitness_sum))
+            worst_individual = min(fitness_list, key=lambda ind: ind.fitness)
+            worst_fitness = worst_individual.fitness
+            increased_difference_total_fitness_sum = total_fitness_sum - worst_fitness * TOTAL_NUMBER_OF_INDIVIDUALS
+            random_number = random.uniform(0, 1) * increased_difference_total_fitness_sum
 
             #stores the sum of the population fitness until the current individual
             previous_fitness_sum = 0
@@ -72,7 +76,8 @@ def run_genetic_algorithm(user_model, iteration, dirName, n_ind = 20, n_gen = 50
             for i in range(TOTAL_NUMBER_OF_INDIVIDUALS):
 
                 individual_fitness = fitness_list[i].fitness
-                previous_fitness_sum += individual_fitness
+                increased_difference_ind_fitness = individual_fitness - worst_fitness
+                previous_fitness_sum += increased_difference_ind_fitness
                 if previous_fitness_sum >= random_number:
                     return current_generation_individuals[i]
 
@@ -102,7 +107,7 @@ def run_genetic_algorithm(user_model, iteration, dirName, n_ind = 20, n_gen = 50
             individual = current_generation_individuals[i]
             individual.calculateFitness()
             fitness_list.append(individual)
-            total_fitness_sum += individual.fitness or 0
+            total_fitness_sum += (individual.fitness or 0)
 
         # we need to sort the fitness_list by their fitness in order to easily find the best individuals
         sorted_fitness_list = sorted(fitness_list, key=lambda d: d.fitness, reverse=True)
@@ -185,7 +190,7 @@ original_ind = Individual(salmanAlaswad_model)
 original_ind.calculateFitness()
 print("problem fitness: ", original_ind.fitness)
 
-TOTAL_NUMBER_OF_INDIVIDUALS_LIST = [20,]
+TOTAL_NUMBER_OF_INDIVIDUALS_LIST = [20]
 MUTATION_RATE = [0.1]
 TOTAL_NUMBER_OF_ELITE_INDIVIDUALS_LIST = [0.1]
 TOTAL_NUMBER_OF_MATED_INDIVIDUALS_LIST = [0.25]
@@ -193,6 +198,7 @@ SELECTION_TECHNIQUES_LIST = ["torneio"]
 NUMBER_OF_GENERATIONS = 10
 ITERATIONS_FROM_SAME_PARAMETERS = 1
 
+t1 = time()
 for n_ind in TOTAL_NUMBER_OF_INDIVIDUALS_LIST:
     for mut_rate in MUTATION_RATE:
         for elite_ind in TOTAL_NUMBER_OF_ELITE_INDIVIDUALS_LIST:
@@ -221,3 +227,5 @@ for n_ind in TOTAL_NUMBER_OF_INDIVIDUALS_LIST:
                     print("best fitness: ", best_folder_ind.fitness)
                     best_folder_ind.printDesign(dirName=dirName, plot=False)
 
+t2 = time()
+print("total time: ", t2 - t1)
