@@ -51,12 +51,12 @@ class UMSalmanAlaswad_I(UserModel):
         if is_t_source_of_any_track == True:
             for target_of_t in self.problem.adjLst[t]:
                 for track2 in self.problem.adjLst[t][target_of_t]:
-                    total_lanes_with_tt += (track2["lanes"] + useModificationsAndNewTracks * individual.tracks_lanes_modifications[track2["id"]]) * track["normalized_tt"]
+                    total_lanes_with_tt += (track2["lanes"] + useModificationsAndNewTracks * individual.tracks_lanes_modifications[track2["id"]]) * track2["normalized_tt"]
         #1.2 iterates over all newTracks targets of t
         if is_t_source_of_any_newTrack == True:
             for target_of_t in individual.newTracks[t]:
                 for track2 in individual.newTracks[t][target_of_t]:
-                    total_lanes_with_tt += track2["lanes"] * track["normalized_tt"]
+                    total_lanes_with_tt += track2["lanes"] * track2["normalized_tt"]
 
         #makes sure total_lanes_with_tt is not 0 (caused by tracks with distance = 0)
         total_lanes_with_tt = total_lanes_with_tt or 1
@@ -77,7 +77,7 @@ class UMSalmanAlaswad_I(UserModel):
                     rid2 = track2["id"]
                     individual.pMatrix[rid][rid2] = 0
                     individual.pMatrix[rid][rid2] += (1.0 - individual.pMatrix[rid][rid]) * (
-                        ((track2["lanes"] + useModificationsAndNewTracks * individual.tracks_lanes_modifications[track2["id"]]) * track["normalized_tt"]) / (total_lanes_with_tt))
+                        ((track2["lanes"] + useModificationsAndNewTracks * individual.tracks_lanes_modifications[track2["id"]]) * track2["normalized_tt"]) / (total_lanes_with_tt))
         #3.2 distributes to newTracks
         if is_t_source_of_any_newTrack == True:
             for target_of_t in individual.newTracks[t]:
@@ -85,7 +85,7 @@ class UMSalmanAlaswad_I(UserModel):
                     rid2 = track2["id"]
                     individual.pMatrix[rid][rid2] = 0
                     individual.pMatrix[rid][rid2] += (1.0 - individual.pMatrix[rid][rid]) * (
-                        (track2["lanes"] * track["normalized_tt"]) / (total_lanes_with_tt))
+                        (track2["lanes"] * track2["normalized_tt"]) / (total_lanes_with_tt))
         #/3
 
 
@@ -144,15 +144,7 @@ class UMSalmanAlaswad_I(UserModel):
         # number of vehicles by track
         individual.vehiclesByRoad = {}
 
-        # 66.5
-        # for track in self.problem.tracks:
-        #     self.calculate_pMatrix(individual, track, useModificationsAndNewTracks=False)
-
-        # for k1, v1 in b.items():
-        #     for k2, v2 in v1.items():
-        #         if v2 != a[k1][k2]:
-        #             print("oh")
-
+        #calculate_pMatrix
         for track in individual.modifiedTracks:
             self.calculate_pMatrix(individual, track, useModificationsAndNewTracks=True)
             if track["s"] not in self.problem.adjLstInv:
@@ -163,7 +155,6 @@ class UMSalmanAlaswad_I(UserModel):
                     self.calculate_pMatrix(individual, track2, useModificationsAndNewTracks=True)
                 
         
-        #0.5
         for s in individual.newTracks:
             for t in individual.newTracks[s]:  # pmatrix for non-regular tracks
                 for track in individual.newTracks[s][t]:
@@ -176,35 +167,15 @@ class UMSalmanAlaswad_I(UserModel):
                             self.calculate_pMatrix(individual, track2, useModificationsAndNewTracks=True)
 
 
-        #66.0
+        #calculate_vehicles_number
         for track in self.problem.tracks:  # number of vehicles for regular tracks
             self.calculate_vehicles_number(individual, track, useModificationsAndNewTracks = True)
-        # a = copy.deepcopy(individual.vehiclesByRoad)
-        # for track in self.problem.tracks:  # number of vehicles for regular tracks
-        #     self.calculate_vehicles_number(individual, track, useModificationsAndNewTracks = True)
 
-        # b = copy.deepcopy(individual.vehiclesByRoad)
-
-        # for track in individual.modifiedTracks:
-        #     self.calculate_vehicles_number(individual, track, useModificationsAndNewTracks = True)
-        #     if track["s"] not in self.problem.adjLstInv:
-        #         continue
-        #     sources_of_t = self.problem.adjLstInv[track["s"]]
-        #     for _, list_of_tracks_of_same_s_and_t in sources_of_t.items():
-        #         for track2 in list_of_tracks_of_same_s_and_t:
-        #             self.calculate_vehicles_number(individual, track, useModificationsAndNewTracks = True)
-
-
-        # for k1, v1 in b.items():
-        #     ak1 = a[k1]
-        #     if v1 != ak1:
-        #         print(k1)
-
-        #0.6
         for s in individual.newTracks:  # number of vehicles for non-regular tracks
             for t in individual.newTracks[s]:
                 for track in individual.newTracks[s][t]:
                     self.calculate_vehicles_number(individual, track, useModificationsAndNewTracks = True)
+
 
         # fitnes value: average density
         densSum = 0.0
@@ -218,24 +189,13 @@ class UMSalmanAlaswad_I(UserModel):
         for track in most_important5percent_tracks:  # regular tracks
             rid = track["id"]
             dens = indentZero(individual.vehiclesByRoad[rid],
-                                   ((track["distance"] / 1000.0) * (track["lanes"] + individual.tracks_lanes_modifications[rid])))
+                                   ((track["distance"]) * (track["lanes"] + individual.tracks_lanes_modifications[rid])))
             densSum += dens
             densCount += 1
-        # for s in individual.newTracks:
-        #     for t in individual.newTracks[s]:
-        #         for track in individual.newTracks[s][t]:
-        #             rid = track["id"]
-        #             dens = indentZero(individual.vehiclesByRoad[rid],
-        #                                    ((track["distance"] / 1000.0) * (track["lanes"])))
-        #             densSum += dens
-        #             densCount += 1
 
-        individual.fitness = densCount * 100 / densSum
+        individual.fitness = densCount / densSum
         
         return individual.fitness
-
-        # 1km * 1faixa = 1kmf || 1 km/f
-        # 100km * 10faixas = 1000kmf || 10km/f
 
     def fitness2(self, individual):
         return old_fitness(self, individual)
