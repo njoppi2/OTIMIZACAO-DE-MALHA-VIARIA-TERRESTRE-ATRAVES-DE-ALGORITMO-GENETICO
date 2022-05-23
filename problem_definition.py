@@ -168,7 +168,7 @@ class ProblemDefinition:
                 break
 
         self.valueAt50percent = tt_list[index_middle_of_area]
-        # percentage = list(map(lambda x: 1 - pow(2, -x / valueAt50percent), tt_list))
+        # percentage = list(map(lambda x: 1 - pow(2, -x / self.valueAt50percent), tt_list))
         # current_distribuition = sorted(list(map(lambda x: (x['tt'] - 1) / x['tt'], self.tracks)), reverse=True)
         # plt.margins(x=0.003, y=0.001)
         # plt.plot(percentage)

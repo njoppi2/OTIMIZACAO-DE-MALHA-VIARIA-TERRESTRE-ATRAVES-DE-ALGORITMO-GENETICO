@@ -253,14 +253,14 @@ class Individual:
                             track["maxspeed"]) + "km/h) x " + str(track["lanes"]) + "."
 
         # nx.draw_networkx(graph, pos=nodePos,  arrows=True, arrowstyle='-|>', with_labels=False, node_size=0, edge_color=edgeColors)
-        nx.draw(graph, pos=nodePos, arrows=True, arrowstyle='-|>', with_labels=False, node_size=0,
+        nx.draw(graph, pos=nodePos, arrows=False, with_labels=False, node_size=0,
                 edge_color=edgeColors)
         nx.draw_networkx_edge_labels(graph, pos=nodePos, edge_labels=edgeLabels, font_color='black')
         if outputFormat != None:
             pyplot.savefig(dirName + "." + str(outputFormat), format=outputFormat)
 
         if dirName:
-            pyplot.savefig(dirName+"/best_individual.png", format="PNG")
+            pyplot.savefig(dirName+"/best_individual.png", format="PNG", dpi=200)
             # pyplot.savefig(outputFilename+".pdf", format="PDF")
 
         if plot:

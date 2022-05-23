@@ -31,7 +31,6 @@ def create_net_file_from(place_name):
         # more in: https://geoffboeing.com/2016/11/osmnx-python-street-networks/
         graph = ox.graph_from_place(place_name, simplify=False,  network_type='drive')
 
-
         # converts "graph" to a simpler .net file
         nx.write_pajek(graph, file_name)
 

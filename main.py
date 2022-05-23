@@ -8,7 +8,7 @@ from user_model import UMSalmanAlaswad_I
 from utils import place_name
 import os
 
-def run_genetic_algorithm(user_model, iteration, dirName, n_ind = 20, n_gen = 50, mut_rate = 0.1, elite_ind = 0.1, mated_ind = 0.25, selection_technique = "torneio"):
+def run_genetic_algorithm(user_model, iteration, dirName, n_ind = 20, n_gen = 50, mut_rate = 0.1, elite_ind = 0.1, mated_ind = 0.25, selection_technique = "torneio", random_ind_technique = "new population"):
     # timeA = time.time()
     problem = user_model.problem
     best_individual_history = []
@@ -20,7 +20,7 @@ def run_genetic_algorithm(user_model, iteration, dirName, n_ind = 20, n_gen = 50
     TOTAL_NUMBER_OF_MATED_INDIVIDUALS = int(TOTAL_NUMBER_OF_INDIVIDUALS * mated_ind)
     TOTAL_NUMBER_OF_RANDOM_INDIVIDUALS = TOTAL_NUMBER_OF_INDIVIDUALS - TOTAL_NUMBER_OF_ELITE_INDIVIDUALS - TOTAL_NUMBER_OF_MATED_INDIVIDUALS
     SELECTION_TECHNIQUE = selection_technique
-    RANDOM_INDIVIDUAL_TECHNIQUE = "new population"
+    RANDOM_INDIVIDUAL_TECHNIQUE = random_ind_technique
     
     ga = GeneticAlgorithm(user_model, mut_rate)
     fitness_list = []
@@ -65,8 +65,9 @@ def run_genetic_algorithm(user_model, iteration, dirName, n_ind = 20, n_gen = 50
     def draw_individual(selection_technique):
         if selection_technique == "roleta":
             worst_individual = min(fitness_list, key=lambda ind: ind.fitness)
-            worst_fitness = worst_individual.fitness
-            increased_difference_total_fitness_sum = total_fitness_sum - worst_fitness * TOTAL_NUMBER_OF_INDIVIDUALS
+            # the "* 0.99" is important to avoid a bug in which almost all individuals have the same fitness
+            close_to_worst_fitness = worst_individual.fitness * 0.99
+            increased_difference_total_fitness_sum = total_fitness_sum - close_to_worst_fitness * TOTAL_NUMBER_OF_INDIVIDUALS
             random_number = random.uniform(0, 1) * increased_difference_total_fitness_sum
 
             #stores the sum of the population fitness until the current individual
@@ -76,7 +77,7 @@ def run_genetic_algorithm(user_model, iteration, dirName, n_ind = 20, n_gen = 50
             for i in range(TOTAL_NUMBER_OF_INDIVIDUALS):
 
                 individual_fitness = fitness_list[i].fitness
-                increased_difference_ind_fitness = individual_fitness - worst_fitness
+                increased_difference_ind_fitness = individual_fitness - close_to_worst_fitness
                 previous_fitness_sum += increased_difference_ind_fitness
                 if previous_fitness_sum >= random_number:
                     return current_generation_individuals[i]
@@ -181,7 +182,7 @@ def run_genetic_algorithm(user_model, iteration, dirName, n_ind = 20, n_gen = 50
 
 
 
-random.seed(0)
+
 file_name = create_net_file_from(place_name)
 problem = ProblemDefinition(file_name)
 salmanAlaswad_model = UMSalmanAlaswad_I(problem)
@@ -190,13 +191,14 @@ original_ind = Individual(salmanAlaswad_model)
 original_ind.calculateFitness()
 print("problem fitness: ", original_ind.fitness)
 
-TOTAL_NUMBER_OF_INDIVIDUALS_LIST = [20]
-MUTATION_RATE = [0.1]
-TOTAL_NUMBER_OF_ELITE_INDIVIDUALS_LIST = [0.1]
-TOTAL_NUMBER_OF_MATED_INDIVIDUALS_LIST = [0.25]
-SELECTION_TECHNIQUES_LIST = ["torneio"]
-NUMBER_OF_GENERATIONS = 10
-ITERATIONS_FROM_SAME_PARAMETERS = 1
+TOTAL_NUMBER_OF_INDIVIDUALS_LIST = [10, 20, 40]
+MUTATION_RATE = [0, 0.05, 0.2]
+TOTAL_NUMBER_OF_ELITE_INDIVIDUALS_LIST = [0, 0.1, 0.3]
+TOTAL_NUMBER_OF_MATED_INDIVIDUALS_LIST = [0.2, 0.5, 0.7]
+SELECTION_TECHNIQUES_LIST = ["torneio", "roleta", "aleatorio"]
+RANDOM_INDIVIDUAL_TECHNIQUE = ["new population", "current population"]
+NUMBER_OF_GENERATIONS = 50
+ITERATIONS_FROM_SAME_PARAMETERS = 10
 
 t1 = time()
 for n_ind in TOTAL_NUMBER_OF_INDIVIDUALS_LIST:
@@ -204,28 +206,34 @@ for n_ind in TOTAL_NUMBER_OF_INDIVIDUALS_LIST:
         for elite_ind in TOTAL_NUMBER_OF_ELITE_INDIVIDUALS_LIST:
             for mated_ind in TOTAL_NUMBER_OF_MATED_INDIVIDUALS_LIST:
                 for selection_technique in SELECTION_TECHNIQUES_LIST:
-                    dirName = "ind-"+str(n_ind) + "-mut-"+str(mut_rate) + "-elite-"+str(elite_ind) + "-mated-" + str(mated_ind) + "-sel-" + str(selection_technique)
-                    best_ind_per_file = []
-                    if not os.path.isdir(dirName):
-                        os.mkdir(dirName)
-                    
-                    parameters = {
-                        "n_ind": n_ind,
-                        "n_gen": NUMBER_OF_GENERATIONS,
-                        "mut_rate": mut_rate,
-                        "elite_ind": elite_ind,
-                        "mated_ind": mated_ind,
-                        "selection_technique": selection_technique
-                    }
-                    for iteration in range(ITERATIONS_FROM_SAME_PARAMETERS):
-                        best_ind = run_genetic_algorithm(salmanAlaswad_model, iteration + 1, dirName, **parameters)
-                        best_ind_per_file.append(best_ind)
+                    for random_ind_technique in RANDOM_INDIVIDUAL_TECHNIQUE:
+                        dirName = "ind-"+str(n_ind) + "-mut-"+str(mut_rate) + "-elite-"+str(elite_ind) + "-mated-" + str(mated_ind) + "-sel-" + str(selection_technique) + "-rand-" + str(random_ind_technique)
+                        best_ind_per_file = []
+                        if not os.path.isdir(dirName):
+                            os.mkdir(dirName)
+                        
+                        parameters = {
+                            "n_ind": n_ind,
+                            "n_gen": NUMBER_OF_GENERATIONS,
+                            "mut_rate": mut_rate,
+                            "elite_ind": elite_ind,
+                            "mated_ind": mated_ind,
+                            "selection_technique": selection_technique,
+                            "random_ind_technique": random_ind_technique
+                        }
+                        random_n = random.random()
+                        random.seed(random_n)
+                        print("seed: ",random_n)
 
-                    #create PNG for best individual in folder
+                        for iteration in range(ITERATIONS_FROM_SAME_PARAMETERS):
+                            best_ind = run_genetic_algorithm(salmanAlaswad_model, iteration + 1, dirName, **parameters)
+                            best_ind_per_file.append(best_ind)
 
-                    best_folder_ind = max(best_ind_per_file, key=lambda k: k.fitness)
-                    print("best fitness: ", best_folder_ind.fitness)
-                    best_folder_ind.printDesign(dirName=dirName, plot=False)
+                        #create PNG for best individual in folder
+
+                        best_folder_ind = max(best_ind_per_file, key=lambda k: k.fitness)
+                        print("best fitness: ", best_folder_ind.fitness)
+                        best_folder_ind.printDesign(dirName=dirName, plot=False)
 
 t2 = time()
 print("total time: ", t2 - t1)
