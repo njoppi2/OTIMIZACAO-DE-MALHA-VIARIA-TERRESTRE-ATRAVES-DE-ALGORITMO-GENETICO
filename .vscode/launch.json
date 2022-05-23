@@ -5,10 +5,18 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Debugger IC",
+            "name": "run main",
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/main.py",
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "run plotter",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/plotter.py",
             "console": "integratedTerminal",
             "justMyCode": true
         }
