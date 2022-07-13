@@ -5,7 +5,7 @@ from load_place import create_net_file_from
 from ga import GeneticAlgorithm
 from problem_definition import ProblemDefinition
 from user_model import UMSalmanAlaswad_I
-from utils import place_name
+from utils import place_name, formated_place_name
 import os
 
 def run_genetic_algorithm(user_model, iteration, dirName, n_ind = 20, n_gen = 50, mut_rate = 0.1, elite_ind = 0.1, mated_ind = 0.25, selection_technique = "torneio", random_ind_technique = "new population"):
@@ -191,14 +191,14 @@ original_ind = Individual(salmanAlaswad_model)
 original_ind.calculateFitness()
 print("problem fitness: ", original_ind.fitness)
 
-TOTAL_NUMBER_OF_INDIVIDUALS_LIST = [10, 20, 40]
-MUTATION_RATE = [0, 0.05, 0.2]
-TOTAL_NUMBER_OF_ELITE_INDIVIDUALS_LIST = [0, 0.1, 0.3]
-TOTAL_NUMBER_OF_MATED_INDIVIDUALS_LIST = [0.2, 0.5, 0.7]
-SELECTION_TECHNIQUES_LIST = ["torneio", "roleta", "aleatorio"]
-RANDOM_INDIVIDUAL_TECHNIQUE = ["new population", "current population"]
+TOTAL_NUMBER_OF_INDIVIDUALS_LIST = [40]
+MUTATION_RATE = [0.2]
+TOTAL_NUMBER_OF_ELITE_INDIVIDUALS_LIST = [0.1]
+TOTAL_NUMBER_OF_MATED_INDIVIDUALS_LIST = [0.7]
+SELECTION_TECHNIQUES_LIST = ["torneio"]
+RANDOM_INDIVIDUAL_TECHNIQUE = ["new population"]
 NUMBER_OF_GENERATIONS = 50
-ITERATIONS_FROM_SAME_PARAMETERS = 10
+ITERATIONS_FROM_SAME_PARAMETERS = 1
 
 t1 = time()
 for n_ind in TOTAL_NUMBER_OF_INDIVIDUALS_LIST:
@@ -207,7 +207,7 @@ for n_ind in TOTAL_NUMBER_OF_INDIVIDUALS_LIST:
             for mated_ind in TOTAL_NUMBER_OF_MATED_INDIVIDUALS_LIST:
                 for selection_technique in SELECTION_TECHNIQUES_LIST:
                     for random_ind_technique in RANDOM_INDIVIDUAL_TECHNIQUE:
-                        dirName = "ind-"+str(n_ind) + "-mut-"+str(mut_rate) + "-elite-"+str(elite_ind) + "-mated-" + str(mated_ind) + "-sel-" + str(selection_technique) + "-rand-" + str(random_ind_technique)
+                        dirName = formated_place_name + "-ind-"+str(n_ind) + "-mut-"+str(mut_rate) + "-elite-"+str(elite_ind) + "-mated-" + str(mated_ind) + "-sel-" + str(selection_technique) + "-rand-" + str(random_ind_technique)
                         best_ind_per_file = []
                         if not os.path.isdir(dirName):
                             os.mkdir(dirName)
@@ -222,8 +222,8 @@ for n_ind in TOTAL_NUMBER_OF_INDIVIDUALS_LIST:
                             "random_ind_technique": random_ind_technique
                         }
                         random_n = random.random()
-                        random.seed(random_n)
-                        print("seed: ",random_n)
+                        random.seed(0.2995205435426651)
+                        print("\nseed: ",random_n, "\n")
 
                         for iteration in range(ITERATIONS_FROM_SAME_PARAMETERS):
                             best_ind = run_genetic_algorithm(salmanAlaswad_model, iteration + 1, dirName, **parameters)
@@ -232,8 +232,30 @@ for n_ind in TOTAL_NUMBER_OF_INDIVIDUALS_LIST:
                         #create PNG for best individual in folder
 
                         best_folder_ind = max(best_ind_per_file, key=lambda k: k.fitness)
-                        print("best fitness: ", best_folder_ind.fitness)
-                        best_folder_ind.printDesign(dirName=dirName, plot=False)
+                        print("\nmelhor fitness: ", best_folder_ind.fitness)
+                        
+                        
+                        newTracksFromBestInd = []
+                        for key, value in best_folder_ind.newTracks.items():
+                            for key2, value2 in value.items():
+                                newTracksFromBestInd.append([key, key2])
+                            # for track in best_folder_ind.problem.tracks:
+                            #     if track['id'] == key:
+                            #         names.append(track['name'])
+                            
+                        newLanesFromBestInd = []
+                        for key, value in best_folder_ind.newLanes.items():
+                            for track in best_folder_ind.problem.tracks:
+                                if track['id'] == key:
+                                    if "name" in track:
+                                        newLanesFromBestInd.append([track['id'], track['name'], [track['s'], track['t']], best_folder_ind.newLanes[key]])
+                                    else:
+                                        newLanesFromBestInd.append([track['id'], [track['s'], track['t']], best_folder_ind.newLanes[key]])
+                        best_folder_ind.printDesign(dirName=dirName, plot=True)
+                        print('\nnovas vias do melhor indivíduo: ', newTracksFromBestInd)
+                        print('\nnovas faixas do melhor indivíduo: ', newLanesFromBestInd)
+                        print('\nmelhora atingida: ', best_folder_ind.fitness * 100 / original_ind.calculateFitness() - 100, '%')
+                        
 
 t2 = time()
-print("total time: ", t2 - t1)
+print("\ntempo total de execução: ", int(t2 - t1), " segundos")

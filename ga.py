@@ -58,6 +58,8 @@ class GeneticAlgorithm:
             metersReached = 0
             trackIds.remove(trackId)
 
+            insertedNodes = set()
+
             # finding the road starting node
             nodeStart = track["s"]
             lastNode = track["t"]
@@ -71,14 +73,24 @@ class GeneticAlgorithm:
                     lastNode = nodeStart
                     if nodeStart in self.problem.adjLstInv:
                         nodeStart = next(iter(self.problem.adjLstInv[nodeStart]))
+                        if nodeStart not in insertedNodes:
+                            insertedNodes.add(nodeStart)
+                        else:
+                            break
                 else: break
 
+
+            insertedNodes = set()
             # finding the road last node
 
             lastNode = track["t"]
             if lastNode not in self.problem.adjLst: break
             while len(list(self.problem.adjLst[lastNode])) == 1:
                 nextNode = next(iter(self.problem.adjLst[lastNode]))
+                if nextNode not in insertedNodes:
+                    insertedNodes.add(nextNode)
+                else:
+                    break
                 track = self.problem.adjLst[lastNode][nextNode][0]
                 metersReached += track["distance"]
                 trackId = int(track["id"])
@@ -123,7 +135,7 @@ class GeneticAlgorithm:
             nodeTargetLat = individual.problem.nodes[aleatoryNodeTarget]['lat']
 
             # random selection of a track id
-            aleatoryTrackId = str(random.randint(1, 1000))
+            aleatoryTrackId = str(random.randint(1, len(self.problem.tracks) - 1))
 
             # random number for the option
             randomNumber = random.randint(1, 3)
