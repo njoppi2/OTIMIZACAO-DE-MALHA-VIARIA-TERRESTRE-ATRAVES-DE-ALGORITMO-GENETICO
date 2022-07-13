@@ -1,3 +1,4 @@
+import os
 import osmnx as ox
 import networkx as nx
 
@@ -17,20 +18,26 @@ config_parameters = {
 }
 
 def create_net_file_from(place_name):
-    ox.config(**config_parameters)
-
     outputName=place_name #.replace(" ", "_")
+    file_name = outputName+".net"
 
-    graph = ox.graph_from_place(place_name, simplify=False,  network_type='drive')
-
-    type(graph)
-    nx.classes.multidigraph.MultiDiGraph
-
-
-    nx.write_pajek(graph, outputName+".net")
-    #nx.write_graphml(graph, "output.graphml")
-    #ox.save_graph_xml(graph, filepath='output.osm')
-    fig, ax = ox.plot_graph(graph)
+    if os.path.exists(file_name):
+        return file_name
+    else:
+        ox.config(**config_parameters)
 
 
-    #pyplot.tight_layout()
+        # loads driveable streets as a graph from the place name
+        # more in: https://geoffboeing.com/2016/11/osmnx-python-street-networks/
+        graph = ox.graph_from_place(place_name, simplify=False,  network_type='drive')
+
+        # converts "graph" to a simpler .net file
+        nx.write_pajek(graph, file_name)
+
+        # nx.write_graphml(graph, "output.graphml")
+        # ox.save_graph_xml(graph, filepath='output.osm')
+        # fig, ax = ox.plot_graph(graph)
+
+
+        #pyplot.tight_layout()
+        return file_name
